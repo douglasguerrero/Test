@@ -7,12 +7,19 @@
 import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import makeSelectBusinessPage from './selectors';
 import { Icon, Menu, Table, Button, Checkbox, Image } from 'semantic-ui-react';
+import firebase from 'firebase';
 
 export class BusinessPage extends React.PureComponent { // eslint-disable-line react/prefer-stateless-function
   state = {}
   handleChange = (e, { value }) => this.setState({ value })
+
+  load() {
+    const starCountRef = firebase.database().ref('items');
+    starCountRef.on('value', (snapshot) => {
+      console.log(snapshot.val());
+    });
+  }
   render() {
     return (
       <div>

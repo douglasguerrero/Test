@@ -34,6 +34,8 @@ import '!file-loader?name=[name].[ext]!./manifest.json';
 import 'file-loader?name=[name].[ext]!./.htaccess'; // eslint-disable-line import/extensions
 /* eslint-enable import/no-webpack-loader-syntax */
 
+import firebase from 'firebase';
+
 import configureStore from './store';
 
 // Import i18n messages
@@ -55,6 +57,16 @@ openSansObserver.load().then(() => {
 }, () => {
   document.body.classList.remove('fontLoaded');
 });
+
+const config = {
+  apiKey: 'AIzaSyAouXOphrZ37cd_1a52dWpPOU7ywyMOWGA',
+  authDomain: 'pocketdeals-77e19.firebaseapp.com',
+  databaseURL: 'https://pocketdeals-77e19.firebaseio.com',
+  projectId: 'pocketdeals-77e19',
+  storageBucket: 'pocketdeals-77e19.appspot.com',
+  messagingSenderId: '378130943047',
+};
+firebase.initializeApp(config);
 
 // Create redux store with history
 // this uses the singleton browserHistory provided by react-router

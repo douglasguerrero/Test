@@ -6,14 +6,26 @@
 
 import React, { Component } from 'react';
 import { Menu, Header, Icon, Segment } from 'semantic-ui-react';
+import firebase from 'firebase';
 
 export default class PrimaryMenu extends Component {
   state = { activeItem: 'inicio' }
 
-  handleItemClick = (e, { name }) => this.setState({ activeItem: name })
+  handleItemClick = (e, { name }) => {
+    this.setState({ activeItem: name });
+
+    if (name === 'logout') {
+      firebase.auth().signOut().then(() => {
+        window.location = '/';
+      });
+    }
+
+    if (name === 'tiendas') {
+      window.location = '/business';
+    }
+  }
 
   render() {
-    console.log(this.state);
     const { activeItem } = this.state;
 
     return (
@@ -34,7 +46,7 @@ export default class PrimaryMenu extends Component {
         <Menu.Item name="promociones" active={activeItem === 'promociones'} onClick={this.handleItemClick} href="/promos">
           <Icon name="tags" /> Promociones
         </Menu.Item>
-        <Menu.Item name="tiendas" active={activeItem === 'tiendas'} onClick={this.handleItemClick} href="/business">
+        <Menu.Item name="tiendas" active={activeItem === 'tiendas'} onClick={this.handleItemClick} >
           <Icon name="shop" /> Tiendas
         </Menu.Item>
         <Menu.Item name="usuarios" active={activeItem === 'usuarios'} onClick={this.handleItemClick} >
@@ -42,6 +54,9 @@ export default class PrimaryMenu extends Component {
         </Menu.Item>
         <Menu.Item name="configuracion" active={activeItem === 'configuracion'} onClick={this.handleItemClick} >
           <Icon name="settings" /> Configuración
+        </Menu.Item>
+        <Menu.Item name="logout" active={activeItem === 'logout'} onClick={this.handleItemClick} >
+          <Icon name="sign out" /> Log out
         </Menu.Item>
       </Menu>
     );
