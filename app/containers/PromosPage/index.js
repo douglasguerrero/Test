@@ -7,7 +7,8 @@
 import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input } from 'semantic-ui-react';
+import _ from 'lodash';
+import { Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Search, Grid } from 'semantic-ui-react';
 import { SingleDatePicker } from 'react-dates';
 import moment from 'moment';
 import 'moment/src/locale/es';
@@ -25,30 +26,55 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     isEditingModal: false,
     openMessageModal: false,
     openConfirmDeleteModal: false,
-    businessHashTable: {},
     advertObject: [],
     modalMessage: '',
     advertSearch: '',
-    test: moment.localeData('es').longDateFormat('LL'),
+    dateFormat: moment.localeData('es').longDateFormat('LL'),
   };
 
   componentWillMount() {
     this.setState({ advertImageUrl: this.defaultImage });
+    this.resetComponent();
     this.loadBusinessAndAdverts();
+  }
+
+  resetComponent = () => this.setState({ isLoading: false, results: [], value: '' });
+
+  handleResultSelect = (e, result) => this.setState({ value: result.title });
+
+  handleSearchChange = (e, value) => {
+    this.setState({ isLoading: true, value });
+
+    setTimeout(() => {
+      if (this.state.value.length < 1) return this.resetComponent();
+
+      const re = new RegExp(_.escapeRegExp(this.state.value), 'i');
+      const isMatch = (result) => re.test(result.title);
+
+      this.setState({
+        isLoading: false,
+        results: _.filter(this.state.businessObject, isMatch),
+      });
+    }, 500);
   }
 
   defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
 
   loadBusinessAndAdverts() {
     this.setState({ advertDataIsLoading: true });
-    const businessHashTable = {};
+    const keys = [];
     const businessRef = firebase.database().ref('business');
     businessRef.on('value', (snapshot) => {
       snapshot.forEach((item) => {
         const itemVal = item.val();
-        businessHashTable[itemVal.businessId] = itemVal.businessName;
+        const source = {
+          title: itemVal.businessName,
+          description: itemVal.businessAddress,
+          image: itemVal.businessImageUrl,
+        };
+        keys.push(source);
       });
-      this.setState({ businessHashTable });
+      this.setState({ businessObject: keys });
       this.loadAdverts();
     });
   }
@@ -94,8 +120,8 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Table.Cell><Image src={advert.advertImageUrl} size="small" /></Table.Cell>
           <Table.Cell>{advert.advertName}</Table.Cell>
           <Table.Cell>{advert.advertDescription}</Table.Cell>
-          <Table.Cell>{this.state.businessHashTable[advert.advertBusinessId]}</Table.Cell>
-          <Table.Cell>{advert.advertExpireDate}</Table.Cell>
+          <Table.Cell>{advert.advertBusinessName}</Table.Cell>
+          <Table.Cell>{moment(advert.advertExpireDate).format('LL')}</Table.Cell>
         </Table.Row>
       );
     }
@@ -128,8 +154,9 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     if (this.advertObject) {
       this.setState({ advertName: this.advertObject.advertName });
       this.setState({ advertDescription: this.advertObject.advertDescription });
-      this.setState({ advertExpireDate: this.advertObject.advertExpireDate });
+      this.setState({ advertExpireDate: moment(this.advertObject.advertExpireDate) });
       this.setState({ advertImageUrl: this.advertObject.advertImageUrl });
+      this.setState({ value: this.advertObject.advertBusinessName });
       this.setState({ isEditingModal: true });
       this.setState({ modalTitle: 'Modificar Promoción' });
       this.setState({ showAddModal: true });
@@ -165,17 +192,17 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     e.preventDefault();
     this.setState({ advertIsLoading: true });
 
-    const { advertName, advertDescription, advertExpireDate, advertImageUrl } = this.state;
-
-    if (this.validateAdvertModal(advertName, advertDescription, advertExpireDate, advertImageUrl)) {
+    const { advertName, advertDescription, advertExpireDate, advertImageUrl, value } = this.state;
+    if (this.validateAdvertModal(advertName, advertDescription, advertExpireDate.format(), advertImageUrl, value)) {
       if (this.state.isEditingModal) {
         const advertId = this.state.checkAdvert;
         const postData = {
           advertId,
           advertName,
           advertDescription,
-          advertExpireDate,
+          advertExpireDate: advertExpireDate.format(),
           advertImageUrl,
+          advertBusinessName: value,
         };
         const updates = {};
         updates[`/adverts/${advertId}`] = postData;
@@ -193,8 +220,9 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           advertId: newGuid,
           advertName,
           advertDescription,
-          advertExpireDate,
+          advertExpireDate: advertExpireDate.format(),
           advertImageUrl,
+          advertBusinessName: value,
         }).then(() => {
           this.setState({ advertIsLoading: false });
           this.closeAddModal();
@@ -209,9 +237,10 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     }
   }
 
-  validateAdvertModal = (advertName, advertDescription, advertExpireDate, advertImageUrl) => {
-    if (advertName && advertDescription && advertExpireDate) {
-      if (advertName !== '' && advertDescription !== '' && advertExpireDate !== '' && advertImageUrl !== this.defaultImage) {
+  validateAdvertModal = (advertName, advertDescription, advertExpireDate, advertImageUrl, advertBusinessName) => {
+    if (advertName && advertDescription && advertExpireDate && advertBusinessName) {
+      if (advertName !== '' && advertDescription !== '' && advertExpireDate !== '' && advertBusinessName !== '' &&
+      advertImageUrl !== this.defaultImage) {
         return true;
       }
     }
@@ -243,6 +272,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     const advertTable = this.generateAdvertList();
     const { advertDataIsLoading, checkAdvert, showAddModal, modalTitle, advertImageUrl, advertName, advertDescription,
     advertExpireDate, advertIsLoading, imageIsLoading, openConfirmDeleteModal, openMessageModal, modalMessage, advertSearch } = this.state;
+    const { isLoading, value, results } = this.state;
     return (
       <div>
         <Segment>
@@ -331,13 +361,28 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                   <Form.Input name="advertDescription" value={advertDescription} placeholder="Descripción" onChange={this.handleChange} />
                 </Form.Field>
                 <Form.Field required>
+                  <label>Tienda</label>
+                  <Grid>
+                    <Grid.Column width={8}>
+                      <Search
+                        loading={isLoading}
+                        onResultSelect={this.handleResultSelect}
+                        onSearchChange={this.handleSearchChange}
+                        results={results}
+                        value={value}
+                        {...this.props}
+                      />
+                    </Grid.Column>
+                  </Grid>
+                </Form.Field>
+                <Form.Field required>
                   <label>Fecha de Expiración</label>
                   <SingleDatePicker
                     date={advertExpireDate}
-                    onDateChange={(date) => this.setState({ date })}
+                    onDateChange={(date) => this.setState({ advertExpireDate: date })}
                     focused={this.state.focused}
                     onFocusChange={({ focused }) => this.setState({ focused })}
-                    displayFormat={this.state.test}
+                    displayFormat={this.state.dateFormat}
                     placeholder="Fecha"
                     numberOfMonths={1}
                     showClearDate
