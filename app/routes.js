@@ -82,6 +82,14 @@ export default function createRoutes(store) {
           .catch(errorLoading);
       },
     }, {
+      path: '/users',
+      name: 'users',
+      getComponent(nextState, cb) {
+        import('containers/UsersPage')
+          .then(loadModule(cb))
+          .catch(errorLoading);
+      },
+    },{
       path: '*',
       name: 'notfound',
       getComponent(nextState, cb) {

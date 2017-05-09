@@ -37,7 +37,7 @@ export class LoginPage extends React.Component { // eslint-disable-line react/pr
     const { email, password, openMessageModal, modalMessage, isLoading } = this.state;
     return (
       <div>
-        <Modal dimmer="blurring" open size="small">
+        <Modal open dimmer="blurring" size="small">
           <Segment inverted color="blue"><Modal.Header><Header as="h3" inverted>
       Login
     </Header></Modal.Header></Segment>
@@ -45,9 +45,11 @@ export class LoginPage extends React.Component { // eslint-disable-line react/pr
             <Modal.Description>
               <Form onSubmit={this.handleSubmit}>
                 <Form.Field>
+                  <label>Usuario</label>
                   <Form.Input name="email" value={email} placeholder="Usuario" onChange={this.handleChange} />
                 </Form.Field>
                 <Form.Field>
+                  <label>Contraseña</label>
                   <Form.Input name="password" value={password} type="password" placeholder="Contraseña" onChange={this.handleChange} />
                 </Form.Field>
                 <Button primary loading={isLoading}>Ingresar</Button>
