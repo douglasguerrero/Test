@@ -42,6 +42,20 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
 
   handleResultSelect = (e, result) => this.setState({ value: result.title });
 
+  handleOnBlur = (e, value) => {
+
+    if (value.value !== '') {
+      const businessFound = this.state.businessObject.filter((businessObject) => {
+        const businessName = businessObject.title;
+        return businessName.toLowerCase().indexOf(value.value) !== -1;
+      });
+
+      if (businessFound.length === 0) {
+        this.setState({ value: '' });
+      }
+    }
+  }
+
   handleSearchChange = (e, value) => {
     this.setState({ isLoading: true, value });
 
@@ -121,6 +135,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Table.Cell>{advert.advertName}</Table.Cell>
           <Table.Cell>{advert.advertDescription}</Table.Cell>
           <Table.Cell>{advert.advertBusinessName}</Table.Cell>
+          <Table.Cell>{moment(advert.advertCreationDate).format('LL')}</Table.Cell>
           <Table.Cell>{moment(advert.advertExpireDate).format('LL')}</Table.Cell>
         </Table.Row>
       );
@@ -223,6 +238,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           advertExpireDate: advertExpireDate.format(),
           advertImageUrl,
           advertBusinessName: value,
+          advertCreationDate: moment().format(),
         }).then(() => {
           this.setState({ advertIsLoading: false });
           this.closeAddModal();
@@ -282,13 +298,13 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Table celled color="blue">
             <Table.Header >
               <Table.Row>
-                <Table.HeaderCell colSpan="6">
+                <Table.HeaderCell colSpan="7">
                   <Segment inverted color="blue"><Header as="h1">Promociones</Header></Segment></Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Header >
               <Table.Row>
-                <Table.HeaderCell colSpan="6">
+                <Table.HeaderCell colSpan="7">
                   <Input
                     action fluid name="advertSearch" value={advertSearch} type="text" placeholder="Buscar Promoción..."
                     onChange={this.handleChange}
@@ -306,6 +322,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                 <Table.HeaderCell>Nombre de Promoción</Table.HeaderCell>
                 <Table.HeaderCell>Descripción</Table.HeaderCell>
                 <Table.HeaderCell>Tienda</Table.HeaderCell>
+                <Table.HeaderCell>Fecha de Creación</Table.HeaderCell>
                 <Table.HeaderCell>Fecha de Expiración</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
@@ -370,6 +387,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                         onSearchChange={this.handleSearchChange}
                         results={results}
                         value={value}
+                        onBlur={this.handleOnBlur}
                         {...this.props}
                       />
                     </Grid.Column>
