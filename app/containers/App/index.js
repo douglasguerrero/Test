@@ -21,7 +21,7 @@ export function App(props) {
           </Segment>
         </Grid.Column>
         <Divider vertical>Or</Divider>
-        <Grid.Column>
+        <Grid.Column width={12}>
           <Segment basic>
             <div>
               {React.Children.toArray(props.children)}

@@ -42,8 +42,8 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
       return this.state.userObject.map((user) =>
         <Table.Row key={user.userId}>
           <Table.Cell><Image src={user.userImage} size="small" /></Table.Cell>
-          <Table.Cell>{user.userName}</Table.Cell>
-          <Table.Cell>{user.userEmail}</Table.Cell>
+          <Table.Cell>{user.firstName} {user.lastName}</Table.Cell>
+          <Table.Cell>{user.email}</Table.Cell>
           <Table.Cell>{user.userPhone}</Table.Cell>
         </Table.Row>
       );

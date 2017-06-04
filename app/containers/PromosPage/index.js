@@ -8,7 +8,7 @@ import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import _ from 'lodash';
-import { Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Search, Grid } from 'semantic-ui-react';
+import { Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Search, Grid, Label } from 'semantic-ui-react';
 import { SingleDatePicker } from 'react-dates';
 import moment from 'moment';
 import 'moment/src/locale/es';
@@ -43,7 +43,6 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   handleResultSelect = (e, result) => this.setState({ value: result.title });
 
   handleOnBlur = (e, value) => {
-
     if (value.value !== '') {
       const businessFound = this.state.businessObject.filter((businessObject) => {
         const businessName = businessObject.title;
@@ -119,6 +118,14 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     }
   }
 
+  statusLabel = (date) => {
+    const expirationDate = moment(date).format();
+    if (moment().format() < expirationDate) {
+      return <Label color="green" key="green">Activo</Label>;
+    }
+    return <Label color="red" key="red">Expirado</Label>;
+  };
+
   generateAdvertList = () => {
     if (this.state.advertObject.length > 0) {
       return this.state.advertObject.map((advert) =>
@@ -137,6 +144,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Table.Cell>{advert.advertBusinessName}</Table.Cell>
           <Table.Cell>{moment(advert.advertCreationDate).format('LL')}</Table.Cell>
           <Table.Cell>{moment(advert.advertExpireDate).format('LL')}</Table.Cell>
+          <Table.Cell>{this.statusLabel(advert.advertExpireDate)}</Table.Cell>
         </Table.Row>
       );
     }
@@ -298,13 +306,13 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Table celled color="blue">
             <Table.Header >
               <Table.Row>
-                <Table.HeaderCell colSpan="7">
+                <Table.HeaderCell colSpan="8">
                   <Segment inverted color="blue"><Header as="h1">Promociones</Header></Segment></Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Header >
               <Table.Row>
-                <Table.HeaderCell colSpan="7">
+                <Table.HeaderCell colSpan="8">
                   <Input
                     action fluid name="advertSearch" value={advertSearch} type="text" placeholder="Buscar Promoción..."
                     onChange={this.handleChange}
@@ -324,6 +332,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                 <Table.HeaderCell>Tienda</Table.HeaderCell>
                 <Table.HeaderCell>Fecha de Creación</Table.HeaderCell>
                 <Table.HeaderCell>Fecha de Expiración</Table.HeaderCell>
+                <Table.HeaderCell>Estado</Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -332,7 +341,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             <Table.Footer>
               <Table.Row>
                 <Table.HeaderCell />
-                <Table.HeaderCell colSpan="6">
+                <Table.HeaderCell colSpan="8">
                   <Button floated="right" icon size="small" color="red" disabled={!checkAdvert} onClick={this.openConfirmDeleteModal}>
                     <Icon name="delete" /> Borrar Promoción
                 </Button>
@@ -345,7 +354,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                 </Table.HeaderCell>
               </Table.Row>
               <Table.Row>
-                <Table.HeaderCell colSpan="6">
+                <Table.HeaderCell colSpan="8">
                   <Menu floated="right" pagination>
                     <Menu.Item as="a" icon>
                       <Icon name="left chevron" />

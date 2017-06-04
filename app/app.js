@@ -59,12 +59,12 @@ openSansObserver.load().then(() => {
 });
 
 const config = {
-  apiKey: 'AIzaSyAouXOphrZ37cd_1a52dWpPOU7ywyMOWGA',
-  authDomain: 'pocketdeals-77e19.firebaseapp.com',
-  databaseURL: 'https://pocketdeals-77e19.firebaseio.com',
-  projectId: 'pocketdeals-77e19',
-  storageBucket: 'pocketdeals-77e19.appspot.com',
-  messagingSenderId: '378130943047',
+  apiKey: 'AIzaSyBpDvC00TtRN7huAbIG5BLmtIEtZ20UJc8',
+  authDomain: 'pocketdealsdev.firebaseapp.com',
+  databaseURL: 'https://pocketdealsdev.firebaseio.com',
+  projectId: ' pocketdealsdev',
+  storageBucket: 'pocketdealsdev.appspot.com',
+  messagingSenderId: '467058471777 ',
 };
 firebase.initializeApp(config);
 
