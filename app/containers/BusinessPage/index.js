@@ -26,7 +26,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   };
 
   componentWillMount() {
-    this.setState({ businessImage: this.defaultImage });
+    this.setState({ photoUrl: this.defaultImage });
     this.loadBusiness();
   }
 
@@ -40,6 +40,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     businessRef.on('value', (snapshot) => {
       snapshot.forEach((item) => {
         const itemVal = item.val();
+        itemVal.key = item.key;
         keys.push(itemVal);
       });
       this.setState({ businessObject: keys });
@@ -51,8 +52,8 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     if (this.state.businessSearch !== '') {
       const businessObjectArray = this.state.businessObject;
       const filteredBusinessObject = businessObjectArray.filter((businessObject) => {
-        const businessName = businessObject.businessName;
-        return businessName.toLowerCase().indexOf(this.state.businessSearch) !== -1;
+        const name = businessObject.name;
+        return name.toLowerCase().indexOf(this.state.businessSearch) !== -1;
       });
       this.setState({ businessObject: filteredBusinessObject });
     } else {
@@ -61,22 +62,23 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   }
 
   generateBusinessList = () => {
+    console.log(this.state.businessObject[0]);
     if (this.state.businessObject.length > 0) {
       return this.state.businessObject.map((business) =>
-        <Table.Row key={business.businessId}>
+        <Table.Row key={business.key}>
           <Table.Cell>
             <Checkbox
               name="checkBusiness"
-              value={business.businessId}
-              checked={this.state.checkBusiness === business.businessId}
+              value={business.key}
+              checked={this.state.checkBusiness === business.key}
               onChange={this.handleChange}
             />
           </Table.Cell>
-          <Table.Cell><Image src={business.businessImageUrl} size="small" /></Table.Cell>
-          <Table.Cell>{business.businessName}</Table.Cell>
-          <Table.Cell>{business.businessAddress}</Table.Cell>
-          <Table.Cell>{business.businessPhone}</Table.Cell>
-          <Table.Cell>{business.businessLocation}</Table.Cell>
+          <Table.Cell><Image src={business.photoUrl} size="small" /></Table.Cell>
+          <Table.Cell>{business.name}</Table.Cell>
+          <Table.Cell>{business.address}</Table.Cell>
+          <Table.Cell>{business.phoneNumber}</Table.Cell>
+          <Table.Cell>{business.location}</Table.Cell>
         </Table.Row>
       );
     }
@@ -93,17 +95,17 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
 
   OpenEditModal = () => {
     this.state.businessObject.forEach((business) => {
-      if (this.state.checkBusiness === business.businessId) {
+      if (this.state.checkBusiness === business.key) {
         this.businessObject = business;
       }
     });
 
     if (this.businessObject) {
-      this.setState({ businessName: this.businessObject.businessName });
-      this.setState({ businessAddress: this.businessObject.businessAddress });
-      this.setState({ businessPhone: this.businessObject.businessPhone });
-      this.setState({ businessLocation: this.businessObject.businessLocation });
-      this.setState({ businessImage: this.businessObject.businessImageUrl });
+      this.setState({ name: this.businessObject.name });
+      this.setState({ address: this.businessObject.address });
+      this.setState({ phoneNumber: this.businessObject.phoneNumber });
+      this.setState({ location: this.businessObject.location });
+      this.setState({ photoUrl: this.businessObject.photoUrl });
       this.setState({ isEditingModal: true });
       this.setState({ modalTitle: 'Modificar Tienda' });
       this.setState({ showAddModal: true });
@@ -111,11 +113,11 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   }
 
   closeAddModal = () => {
-    this.setState({ businessName: '' });
-    this.setState({ businessAddress: '' });
-    this.setState({ businessPhone: '' });
-    this.setState({ businessLocation: '' });
-    this.setState({ businessImage: this.defaultImage });
+    this.setState({ name: '' });
+    this.setState({ address: '' });
+    this.setState({ phoneNumber: '' });
+    this.setState({ location: '' });
+    this.setState({ photoUrl: this.defaultImage });
     this.setState({ showAddModal: false });
   }
   closeMessageModal = () => {
@@ -131,13 +133,13 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     const uploadTask = storageRef.child(`${file.name}`).put(file);
 
     uploadTask.on('state_changed', (snapshot) => {
-  // Observe state change events such as progress, pause, and resume
-  // See below for more detail
     }, (error) => {
+      console.log(error);
       this.setState({ imageIsLoading: false });
     }, () => {
+      console.log('se subio');
       const downloadURL = uploadTask.snapshot.downloadURL;
-      this.setState({ businessImage: downloadURL });
+      this.setState({ photoUrl: downloadURL });
       this.setState({ imageIsLoading: false });
     });
   };
@@ -146,21 +148,20 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     e.preventDefault();
     this.setState({ businessIsLoading: true });
 
-    const { businessName, businessAddress, businessPhone, businessLocation, businessImage } = this.state;
+    const { name, address, phoneNumber, location, photoUrl } = this.state;
 
-    if (this.validateBusinessModal(businessName, businessAddress, businessPhone, businessLocation, businessImage)) {
+    if (this.validateBusinessModal(name, address, phoneNumber, location, photoUrl)) {
       if (this.state.isEditingModal) {
-        const businessId = this.state.checkBusiness;
+        const key = this.state.checkBusiness;
         const postData = {
-          businessId,
-          businessName,
-          businessAddress,
-          businessPhone,
-          businessLocation,
-          businessImageUrl: businessImage,
+          name,
+          address,
+          phoneNumber,
+          location,
+          photoUrl,
         };
         const updates = {};
-        updates[`/business/${businessId}`] = postData;
+        updates[`/business/${key}`] = postData;
         firebase.database().ref().update(updates).then(() => {
           this.setState({ businessIsLoading: false });
           this.setState({ checkBusiness: '' });
@@ -171,13 +172,13 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
         });
       } else {
         const newGuid = generateGUID();
-        firebase.database().ref(`business/${newGuid}`).set({
-          businessId: newGuid,
-          businessName,
-          businessAddress,
-          businessPhone,
-          businessLocation,
-          businessImageUrl: businessImage,
+        var newKey = firebase.database().ref().child('business').push().key;
+        firebase.database().ref(`business/${newKey}`).set({
+          name,
+          address,
+          phoneNumber,
+          location,
+          photoUrl,
         }).then(() => {
           this.setState({ businessIsLoading: false });
           this.closeAddModal();
@@ -195,8 +196,8 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   deleteBusiness = (e) => {
     e.preventDefault();
     this.setState({ businessIsLoading: true });
-    const businessId = this.state.checkBusiness;
-    firebase.database().ref(`business/${businessId}`).remove().then(() => {
+    const key = this.state.checkBusiness;
+    firebase.database().ref(`business/${key}`).remove().then(() => {
       this.setState({ businessIsLoading: false });
       this.loadBusiness();
       this.closeConfirmDeleteModal();
@@ -213,9 +214,9 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     this.setState({ openConfirmDeleteModal: true });
   }
 
-  validateBusinessModal = (businessName, businessAddress, businessPhone, businessLocation, businessImage) => {
-    if (businessName && businessAddress && businessPhone && businessLocation) {
-      if (businessName !== '' && businessAddress !== '' && businessPhone !== '' && businessLocation !== '' && businessImage !== this.defaultImage) {
+  validateBusinessModal = (name, address, phoneNumber, location, photoUrl) => {
+    if (name && address && phoneNumber && location) {
+      if (name !== '' && address !== '' && phoneNumber !== '' && location !== '' && photoUrl !== this.defaultImage) {
         return true;
       }
     }
@@ -225,8 +226,8 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
 
   render() {
     const businessTable = this.generateBusinessList();
-    const { businessImage, imageIsLoading, showAddModal, businessIsLoading, businessName, openConfirmDeleteModal, modalMessage,
-      businessAddress, businessPhone, businessLocation, checkBusiness, modalTitle, openMessageModal, businessDataIsLoading, businessSearch } = this.state;
+    const { photoUrl, imageIsLoading, showAddModal, businessIsLoading, name, openConfirmDeleteModal, modalMessage,
+      address, phoneNumber, location, checkBusiness, modalTitle, openMessageModal, businessDataIsLoading, businessSearch } = this.state;
     return (
       <div>
         <Segment>
@@ -309,19 +310,19 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
               <Form>
                 <Form.Field required>
                   <label>Nombre de Tienda</label>
-                  <Form.Input name="businessName" value={businessName} placeholder="Nombre de Tienda" onChange={this.handleChange} />
+                  <Form.Input name="name" value={name} placeholder="Nombre de Tienda" onChange={this.handleChange} />
                 </Form.Field>
                 <Form.Field required>
                   <label>Dirección</label>
-                  <Form.Input name="businessAddress" value={businessAddress} placeholder="Dirección" onChange={this.handleChange} />
+                  <Form.Input name="address" value={address} placeholder="Dirección" onChange={this.handleChange} />
                 </Form.Field>
                 <Form.Field required>
                   <label>Teléfono</label>
-                  <Form.Input name="businessPhone" value={businessPhone} placeholder="Teléfono" onChange={this.handleChange} />
+                  <Form.Input name="phoneNumber" value={phoneNumber} placeholder="Teléfono" onChange={this.handleChange} />
                 </Form.Field>
                 <Form.Field required>
                   <label>Ciudad</label>
-                  <Form.Input name="businessLocation" value={businessLocation} placeholder="Ciudad" onChange={this.handleChange} />
+                  <Form.Input name="location" value={location} placeholder="Ciudad" onChange={this.handleChange} />
                 </Form.Field>
                 <Form.Field required>
                   <label>Imagen</label>
@@ -329,7 +330,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
                     <Dimmer active={imageIsLoading}>
                       <Loader indeterminate>Cargando Imagen</Loader>
                     </Dimmer>
-                    <Image src={businessImage} size="medium" shape="rounded" />
+                    <Image src={photoUrl} size="medium" shape="rounded" />
                   </Segment>
                   <input type="file" id="input" onChange={this.handleFiles} />
                 </Form.Field>
