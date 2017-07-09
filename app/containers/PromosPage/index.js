@@ -35,14 +35,19 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   componentWillMount() {
     this.setState({ advertImageUrl: this.defaultImage });
     this.resetComponent();
-    this.loadBusinessAndAdverts();
+    this.setState({ advertDataIsLoading: true });
+    this.loadBusiness();
+    this.loadAdverts();
+    this.loadCategories();
   }
 
-  resetComponent = () => this.setState({ isLoading: false, results: [], value: '' });
+  defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
 
-  handleResultSelect = (e, result) => this.setState({ value: result.title });
+  resetComponent = () => this.setState({ businessIsLoading: false, businessResults: [], businessValue: '', categoryIsLoading: false, categoryResults: [], categoryValue: '' });
 
-  handleOnBlur = (e, value) => {
+  handleBusinessResultSelect = (e, result) => this.setState({ businessValue: result.title });
+
+  handleBusinessOnBlur = (e, value) => {
     if (value.value !== '') {
       const businessFound = this.state.businessObject.filter((businessObject) => {
         const businessName = businessObject.title;
@@ -50,31 +55,59 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
       });
 
       if (businessFound.length === 0) {
-        this.setState({ value: '' });
+        this.setState({ businessValue: '' });
       }
     }
   }
 
-  handleSearchChange = (e, value) => {
-    this.setState({ isLoading: true, value });
+  handleBusinessSearchChange = (e, value) => {
+    this.setState({ businessIsLoading: true, businessValue: value });
 
     setTimeout(() => {
-      if (this.state.value.length < 1) return this.resetComponent();
+      if (this.state.businessValue.length < 1) return this.resetComponent();
 
-      const re = new RegExp(_.escapeRegExp(this.state.value), 'i');
+      const re = new RegExp(_.escapeRegExp(this.state.businessValue), 'i');
       const isMatch = (result) => re.test(result.title);
 
       this.setState({
-        isLoading: false,
-        results: _.filter(this.state.businessObject, isMatch),
+        businessIsLoading: false,
+        businessResults: _.filter(this.state.businessObject, isMatch),
       });
     }, 500);
   }
 
-  defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
+  handleCategoryResultSelect = (e, result) => this.setState({ categoryValue: result.title });
 
-  loadBusinessAndAdverts() {
-    this.setState({ advertDataIsLoading: true });
+  handleCategoryOnBlur = (e, value) => {
+    if (value.value !== '') {
+      const categoryFound = this.state.categoriesObject.filter((categoriesObject) => {
+        const categoryName = categoriesObject.title;
+        return categoryName.toLowerCase().indexOf(value.value) !== -1;
+      });
+
+      if (categoryFound.length === 0) {
+        this.setState({ categoryValue: '' });
+      }
+    }
+  }
+
+  handleCategorySearchChange = (e, value) => {
+    this.setState({ categoryIsLoading: true, categoryValue: value });
+
+    setTimeout(() => {
+      if (this.state.categoryValue.length < 1) return this.resetComponent();
+
+      const re = new RegExp(_.escapeRegExp(this.state.categoryValue), 'i');
+      const isMatch = (result) => re.test(result.title);
+
+      this.setState({
+        categoryIsLoading: false,
+        categoryResults: _.filter(this.state.categoriesObject, isMatch),
+      });
+    }, 500);
+  }
+
+  loadBusiness() {
     const keys = [];
     const businessRef = firebase.database().ref('business');
     businessRef.on('value', (snapshot) => {
@@ -88,7 +121,21 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
         keys.push(source);
       });
       this.setState({ businessObject: keys });
-      this.loadAdverts();
+    });
+  }
+
+  loadCategories() {
+    const keys = [];
+    const advertRef = firebase.database().ref('categories');
+    advertRef.on('value', (snapshot) => {
+      snapshot.forEach((item) => {
+        const itemVal = item.val();
+        const source = {
+          title: itemVal.name,
+        };
+        keys.push(source);
+      });
+      this.setState({ categoriesObject: keys });
     });
   }
 
@@ -98,7 +145,9 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     advertRef.on('value', (snapshot) => {
       snapshot.forEach((item) => {
         const itemVal = item.val();
-        keys.push(itemVal);
+        if (itemVal.active) {
+          keys.push(itemVal);
+        }
       });
       this.setState({ advertObject: keys });
       this.setState({ advertDataIsLoading: false });
@@ -114,7 +163,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
       });
       this.setState({ advertObject: filteredAdvertObject });
     } else {
-      this.loadBusinessAndAdverts();
+      this.loadAdverts();
     }
   }
 
@@ -142,6 +191,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Table.Cell>{advert.advertName}</Table.Cell>
           <Table.Cell>{advert.advertDescription}</Table.Cell>
           <Table.Cell>{advert.advertBusinessName}</Table.Cell>
+          <Table.Cell>{advert.advertCategoryName}</Table.Cell>
           <Table.Cell>{moment(advert.advertCreationDate).format('LL')}</Table.Cell>
           <Table.Cell>{moment(advert.advertExpireDate).format('LL')}</Table.Cell>
           <Table.Cell>{this.statusLabel(advert.advertExpireDate)}</Table.Cell>
@@ -190,9 +240,27 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     e.preventDefault();
     this.setState({ advertIsLoading: true });
     const advertId = this.state.checkAdvert;
-    firebase.database().ref(`adverts/${advertId}`).remove().then(() => {
+
+    this.state.advertObject.forEach((advert) => {
+      if (advertId === advert.advertId) {
+        this.advertObject = advert;
+      }
+    });
+    const postData = {
+      advertId,
+      advertName: this.advertObject.advertName,
+      advertDescription: this.advertObject.advertDescription,
+      advertExpireDate: this.advertObject.advertExpireDate,
+      advertImageUrl: this.advertObject.advertImageUrl,
+      advertBusinessName: this.advertObject.advertBusinessName,
+      advertCategoryName: this.advertObject.advertCategoryName,
+      active: false,
+    };
+    const updates = {};
+    updates[`/adverts/${advertId}`] = postData;
+    firebase.database().ref().update(updates).then(() => {
       this.setState({ advertIsLoading: false });
-      this.loadBusinessAndAdverts();
+      this.loadAdverts();
       this.closeConfirmDeleteModal();
       this.setState({ openMessageModal: true });
       this.setState({ modalMessage: 'Promoción borrada exitosamente' });
@@ -215,8 +283,8 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     e.preventDefault();
     this.setState({ advertIsLoading: true });
 
-    const { advertName, advertDescription, advertExpireDate, advertImageUrl, value } = this.state;
-    if (this.validateAdvertModal(advertName, advertDescription, advertExpireDate.format(), advertImageUrl, value)) {
+    const { advertName, advertDescription, advertExpireDate, advertImageUrl, businessValue, categoryValue } = this.state;
+    if (this.validateAdvertModal(advertName, advertDescription, advertExpireDate.format(), advertImageUrl, businessValue, categoryValue)) {
       if (this.state.isEditingModal) {
         const advertId = this.state.checkAdvert;
         const postData = {
@@ -225,14 +293,16 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           advertDescription,
           advertExpireDate: advertExpireDate.format(),
           advertImageUrl,
-          advertBusinessName: value,
+          advertBusinessName: businessValue,
+          advertCategoryName: categoryValue,
+          active: true,
         };
         const updates = {};
         updates[`/adverts/${advertId}`] = postData;
         firebase.database().ref().update(updates).then(() => {
           this.setState({ advertIsLoading: false });
           this.setState({ checkAdvert: '' });
-          this.loadBusinessAndAdverts();
+          this.loadAdverts();
           this.closeAddModal();
           this.setState({ openMessageModal: true });
           this.setState({ modalMessage: 'Promoción actualizada exitosamente' });
@@ -245,8 +315,10 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           advertDescription,
           advertExpireDate: advertExpireDate.format(),
           advertImageUrl,
-          advertBusinessName: value,
+          advertBusinessName: businessValue,
+          advertCategoryName: categoryValue,
           advertCreationDate: moment().format(),
+          active: true,
         }).then(() => {
           this.setState({ advertIsLoading: false });
           this.closeAddModal();
@@ -261,9 +333,9 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     }
   }
 
-  validateAdvertModal = (advertName, advertDescription, advertExpireDate, advertImageUrl, advertBusinessName) => {
-    if (advertName && advertDescription && advertExpireDate && advertBusinessName) {
-      if (advertName !== '' && advertDescription !== '' && advertExpireDate !== '' && advertBusinessName !== '' &&
+  validateAdvertModal = (advertName, advertDescription, advertExpireDate, advertImageUrl, advertBusinessName, advertCategoryName) => {
+    if (advertName && advertDescription && advertExpireDate && advertBusinessName && advertCategoryName) {
+      if (advertName !== '' && advertDescription !== '' && advertExpireDate !== '' && advertBusinessName !== '' && advertCategoryName !== '' &&
       advertImageUrl !== this.defaultImage) {
         return true;
       }
@@ -296,7 +368,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     const advertTable = this.generateAdvertList();
     const { advertDataIsLoading, checkAdvert, showAddModal, modalTitle, advertImageUrl, advertName, advertDescription,
     advertExpireDate, advertIsLoading, imageIsLoading, openConfirmDeleteModal, openMessageModal, modalMessage, advertSearch } = this.state;
-    const { isLoading, value, results } = this.state;
+    const { businessIsLoading, businessValue, businessResults, categoryIsLoading, categoryResults, categoryValue } = this.state;
     return (
       <div>
         <Segment>
@@ -306,13 +378,13 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Table celled color="blue">
             <Table.Header >
               <Table.Row>
-                <Table.HeaderCell colSpan="8">
+                <Table.HeaderCell colSpan="9">
                   <Segment inverted color="blue"><Header as="h1">Promociones</Header></Segment></Table.HeaderCell>
               </Table.Row>
             </Table.Header>
             <Table.Header >
               <Table.Row>
-                <Table.HeaderCell colSpan="8">
+                <Table.HeaderCell colSpan="9">
                   <Input
                     action fluid name="advertSearch" value={advertSearch} type="text" placeholder="Buscar Promoción..."
                     onChange={this.handleChange}
@@ -330,6 +402,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                 <Table.HeaderCell>Nombre de Promoción</Table.HeaderCell>
                 <Table.HeaderCell>Descripción</Table.HeaderCell>
                 <Table.HeaderCell>Tienda</Table.HeaderCell>
+                <Table.HeaderCell>Categoría</Table.HeaderCell>
                 <Table.HeaderCell>Fecha de Creación</Table.HeaderCell>
                 <Table.HeaderCell>Fecha de Expiración</Table.HeaderCell>
                 <Table.HeaderCell>Estado</Table.HeaderCell>
@@ -341,7 +414,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             <Table.Footer>
               <Table.Row>
                 <Table.HeaderCell />
-                <Table.HeaderCell colSpan="8">
+                <Table.HeaderCell colSpan="9">
                   <Button floated="right" icon size="small" color="red" disabled={!checkAdvert} onClick={this.openConfirmDeleteModal}>
                     <Icon name="delete" /> Borrar Promoción
                 </Button>
@@ -354,7 +427,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                 </Table.HeaderCell>
               </Table.Row>
               <Table.Row>
-                <Table.HeaderCell colSpan="8">
+                <Table.HeaderCell colSpan="9">
                   <Menu floated="right" pagination>
                     <Menu.Item as="a" icon>
                       <Icon name="left chevron" />
@@ -391,12 +464,28 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                   <Grid>
                     <Grid.Column width={8}>
                       <Search
-                        loading={isLoading}
-                        onResultSelect={this.handleResultSelect}
-                        onSearchChange={this.handleSearchChange}
-                        results={results}
-                        value={value}
-                        onBlur={this.handleOnBlur}
+                        loading={businessIsLoading}
+                        onResultSelect={this.handleBusinessResultSelect}
+                        onSearchChange={this.handleBusinessSearchChange}
+                        results={businessResults}
+                        value={businessValue}
+                        onBlur={this.handleBusinessOnBlur}
+                        {...this.props}
+                      />
+                    </Grid.Column>
+                  </Grid>
+                </Form.Field>
+                <Form.Field required>
+                  <label>Categoria</label>
+                  <Grid>
+                    <Grid.Column width={8}>
+                      <Search
+                        loading={categoryIsLoading}
+                        onResultSelect={this.handleCategoryResultSelect}
+                        onSearchChange={this.handleCategorySearchChange}
+                        results={categoryResults}
+                        value={categoryValue}
+                        onBlur={this.handleCategoryOnBlur}
                         {...this.props}
                       />
                     </Grid.Column>

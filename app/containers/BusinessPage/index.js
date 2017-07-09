@@ -40,7 +40,9 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     businessRef.on('value', (snapshot) => {
       snapshot.forEach((item) => {
         const itemVal = item.val();
-        keys.push(itemVal);
+        if (itemVal.active) {
+          keys.push(itemVal);
+        }
       });
       this.setState({ businessObject: keys });
       this.setState({ businessDataIsLoading: false });
@@ -158,6 +160,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           businessPhone,
           businessLocation,
           businessImageUrl: businessImage,
+          active: true,
         };
         const updates = {};
         updates[`/business/${businessId}`] = postData;
@@ -178,6 +181,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           businessPhone,
           businessLocation,
           businessImageUrl: businessImage,
+          active: true,
         }).then(() => {
           this.setState({ businessIsLoading: false });
           this.closeAddModal();
@@ -196,7 +200,23 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     e.preventDefault();
     this.setState({ businessIsLoading: true });
     const businessId = this.state.checkBusiness;
-    firebase.database().ref(`business/${businessId}`).remove().then(() => {
+    this.state.businessObject.forEach((business) => {
+      if (businessId === business.businessId) {
+        this.businessObject = business;
+      }
+    });
+    const postData = {
+      businessId,
+      businessName: this.businessObject.businessName,
+      businessAddress: this.businessObject.businessAddress,
+      businessPhone: this.businessObject.businessPhone,
+      businessLocation: this.businessObject.businessLocation,
+      businessImageUrl: this.businessObject.businessImageUrl,
+      active: false,
+    };
+    const updates = {};
+    updates[`/business/${businessId}`] = postData;
+    firebase.database().ref().update(updates).then(() => {
       this.setState({ businessIsLoading: false });
       this.loadBusiness();
       this.closeConfirmDeleteModal();
