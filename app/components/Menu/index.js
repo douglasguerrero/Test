@@ -6,8 +6,8 @@
 
 import React, { Component } from 'react';
 import { Menu, Header, Icon, Segment } from 'semantic-ui-react';
-import firebase from 'firebase';
 import { browserHistory } from 'react-router';
+import firebase from 'firebase';
 
 export default class PrimaryMenu extends Component {
   state = { activeItem: 'inicio' }
@@ -34,10 +34,6 @@ export default class PrimaryMenu extends Component {
 
     if (name === 'usuarios') {
       browserHistory.push('/users');
-    }
-
-    if (name === 'promociones') {
-      browserHistory.push('/promos');
     }
   }
 
@@ -67,9 +63,6 @@ export default class PrimaryMenu extends Component {
         </Menu.Item>
         <Menu.Item name="usuarios" active={activeItem === 'usuarios'} onClick={this.handleItemClick}>
           <Icon name="users" /> Usuarios
-        </Menu.Item>
-        <Menu.Item name="configuracion" active={activeItem === 'configuracion'} onClick={this.handleItemClick} >
-          <Icon name="settings" /> Configuración
         </Menu.Item>
         <Menu.Item name="logout" active={activeItem === 'logout'} onClick={this.handleItemClick} >
           <Icon name="sign out" /> Log out

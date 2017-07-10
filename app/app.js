@@ -58,13 +58,13 @@ openSansObserver.load().then(() => {
   document.body.classList.remove('fontLoaded');
 });
 
-const config = {
-  apiKey: 'AIzaSyBpDvC00TtRN7huAbIG5BLmtIEtZ20UJc8',
-  authDomain: 'pocketdealsdev.firebaseapp.com',
-  databaseURL: 'https://pocketdealsdev.firebaseio.com',
-  projectId: ' pocketdealsdev',
-  storageBucket: 'pocketdealsdev.appspot.com',
-  messagingSenderId: '467058471777 ',
+var config = {
+    apiKey: "AIzaSyAb4dE5rpoxVuHoGx89bXemBjbEp23n84M",
+    authDomain: "pocketdeals-ae24f.firebaseapp.com",
+    databaseURL: "https://pocketdeals-ae24f.firebaseio.com",
+    projectId: "pocketdeals-ae24f",
+    storageBucket: "pocketdeals-ae24f.appspot.com",
+    messagingSenderId: "471413790469"
 };
 firebase.initializeApp(config);
 
