@@ -1,8 +1,3 @@
-/*
- *
- * BusinessPage
- *
- */
 
 import React, { PropTypes } from 'react';
 import { connect } from 'react-redux';
@@ -99,6 +94,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
 
   generateBusinessList = () => {
     if (this.state.businessObject.length > 0) {
+      console.log(this.state.businessObject);
       return this.state.businessObject.map((business) =>
         <Table.Row key={business.key}>
           <Table.Cell>
@@ -154,7 +150,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     this.setState({ address: '' });
     this.setState({ phoneNumber: '' });
     this.setState({ location: '' });
-    this.setState({ photoUrl: [] });
+    this.setState({ categories: [] });
     this.setState({ photoUrl: this.defaultImage });
     this.setState({ showAddModal: false });
   }
@@ -188,24 +184,34 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     if (this.validateBusinessModal(name, address, phoneNumber, location, photoUrl, categories)) {
       if (this.state.isEditingModal) {
         const key = this.state.checkBusiness;
-        const postData = {
-          name,
-          address,
-          phoneNumber,
-          location,
-          photoUrl,
-          categories,
-          isActive: true,
-        };
-        const updates = {};
-        updates[`/business/${key}`] = postData;
-        firebase.database().ref().update(updates).then(() => {
-          this.setState({ businessIsLoading: false });
-          this.setState({ checkBusiness: '' });
-          this.loadBusiness();
-          this.closeAddModal();
-          this.setState({ openMessageModal: true });
-          this.setState({ modalMessage: 'Tienda actualizada exitosamente' });
+        const promosBusinessRef = firebase.database().ref('/promosBusiness/' + key);
+        promosBusinessRef.once('value', (snapshot) => {
+          const promos = snapshot.val().promos ? snapshot.val().promos : [];
+          const postDataBusiness = {
+            name,
+            address,
+            phoneNumber,
+            location,
+            photoUrl,
+            categories,
+            isActive: true,
+          };
+          const postDataPromosBusiness = {
+            businessName: name,
+            isBusinessActive: true,
+            promos: promos,
+          };
+          const updates = {};
+          updates[`/business/${key}`] = postDataBusiness;
+          updates[`/promosBusiness/${key}`] = postDataPromosBusiness;
+          firebase.database().ref().update(updates).then(() => {
+            this.setState({ businessIsLoading: false });
+            this.setState({ checkBusiness: '' });
+            this.loadBusiness();
+            this.closeAddModal();
+            this.setState({ openMessageModal: true });
+            this.setState({ modalMessage: 'Tienda actualizada exitosamente' });
+          });
         });
       } else {
         const newKey = firebase.database().ref().child('business').push().key;
@@ -216,11 +222,18 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           location,
           photoUrl,
           categories,
+          isActive: true,
         }).then(() => {
-          this.setState({ businessIsLoading: false });
-          this.closeAddModal();
-          this.setState({ openMessageModal: true });
-          this.setState({ modalMessage: 'Tienda agregada exitosamente' });
+          firebase.database().ref(`promosBusiness/${newKey}`).set({
+            businessName: name,
+            isBusinessActive: true,
+            promos: [],
+          }).then(() => {
+            this.setState({ businessIsLoading: false });
+            this.closeAddModal();
+            this.setState({ openMessageModal: true });
+            this.setState({ modalMessage: 'Tienda agregada exitosamente' });
+          });
         });
       }
     } else {
@@ -234,27 +247,38 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     e.preventDefault();
     this.setState({ businessIsLoading: true });
     const key = this.state.checkBusiness;
-    this.state.businessObject.forEach((business) => {
-      if (key === business.key) {
-        this.businessObject = business;
-      }
-    });
-    const postData = {
-      name: this.businessObject.name,
-      address: this.businessObject.address,
-      phoneNumber: this.businessObject.phoneNumber,
-      location: this.businessObject.location,
-      photoUrl: this.businessObject.photoUrl,
-      isActive: false,
-    };
-    const updates = {};
-    updates[`/business/${key}`] = postData;
-    firebase.database().ref().update(updates).then(() => {
-      this.setState({ businessIsLoading: false });
-      this.loadBusiness();
-      this.closeConfirmDeleteModal();
-      this.setState({ openMessageModal: true });
-      this.setState({ modalMessage: 'Tienda borrada exitosamente' });
+    const promosBusinessRef = firebase.database().ref('/promosBusiness/' + key);
+    promosBusinessRef.once('value', (snapshot) => {
+      const promos = snapshot.val().promos ? snapshot.val().promos : [];
+      this.state.businessObject.forEach((business) => {
+        if (key === business.key) {
+          this.businessObject = business;
+        }
+      });
+      const postDataBusiness = {
+        name: this.businessObject.name,
+        address: this.businessObject.address,
+        phoneNumber: this.businessObject.phoneNumber,
+        location: this.businessObject.location,
+        photoUrl: this.businessObject.photoUrl,
+        isActive: false,
+      };
+      const postDataPromosBusiness = {
+        businessName: this.businessObject.name,
+        isBusinessActive: false,
+        promos,
+      };
+      const updates = {};
+      updates[`/business/${key}`] = postDataBusiness;
+      updates[`/promosBusiness/${key}`] = postDataPromosBusiness;
+      firebase.database().ref().update(updates).then(() => {
+        this.setState({ businessIsLoading: false });
+        this.setState({ checkBusiness: '' });
+        this.loadBusiness();
+        this.closeConfirmDeleteModal();
+        this.setState({ openMessageModal: true });
+        this.setState({ modalMessage: 'Tienda borrada exitosamente' });
+      });
     });
   }
 
@@ -429,18 +453,4 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   }
 }
 
-BusinessPage.propTypes = {
-  dispatch: PropTypes.func.isRequired,
-};
-
-const mapStateToProps = createStructuredSelector({
-  // BusinessPage: makeSelectBusinessPage(),
-});
-
-function mapDispatchToProps(dispatch) {
-  return {
-    dispatch,
-  };
-}
-
-export default connect(mapStateToProps, mapDispatchToProps)(BusinessPage);
+export default connect()(BusinessPage);
