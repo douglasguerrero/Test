@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import _ from 'lodash';
-import { Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Search, Grid, Label } from 'semantic-ui-react';
+import { Dropdown, Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Search, Grid, Label } from 'semantic-ui-react';
 import { SingleDatePicker } from 'react-dates';
 import moment from 'moment';
 import 'moment/src/locale/es';
@@ -11,8 +11,11 @@ import firebase from 'firebase';
 export class PromosPage extends React.PureComponent { // eslint-disable-line react/prefer-stateless-function
   state = {
     imageIsLoading: false,
+    businessIsLoading: false,
     showAddModal: false,
-    promoDataIsLoading: false,
+    promoName: '',
+    promoDescription: '',
+    promoDataIsLoading: true,
     checkPromo: false,
     promoIsLoading: false,
     isEditingModal: false,
@@ -21,50 +24,25 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     tableColumn: null,
     tableColumnDirection: null,
     promoObject: [],
+    businessObject: [],
+    businessResults: [],
     modalMessage: '',
     promoSearch: '',
+    imageUrl: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
     dateFormat: moment.localeData('es').longDateFormat('LL'),
   };
 
   componentWillMount() {
-    this.setState({ imageUrl: this.defaultImage });
-    this.resetComponent();
-    this.setState({ promoDataIsLoading: true });
-    this.loadBusiness();
-    this.loadPromos();
-  }
-
-  defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
-
-  resetComponent = () => this.setState({ businessIsLoading: false, businessResults: [], businessValue: '' });
-
-  handleBusinessResultSelect = (e, result) => this.setState({ businessValue: result.title });
-
-  handleBusinessOnBlur = (e, value) => {
-    if (value.value !== '') {
-      const businessFound = this.state.businessObject.filter((businessObject) => {
-        const businessName = businessObject.title;
-        return businessName.toLowerCase().indexOf(value.value) !== -1;
-      });
-
-      if (businessFound.length === 0) {
-        this.setState({ businessValue: '' });
-      }
+    const user = firebase.auth().currentUser;
+    if (!user) { 
+      window.location = '/';
+    } else {
+      this.loadBusiness();
+      this.loadPromos();
     }
   }
 
-  handleBusinessSearchChange = (e, value) => {
-    this.setState({ businessIsLoading: true, businessValue: value });
-    setTimeout(() => {
-      if (this.state.businessValue.length < 1) return this.resetComponent();
-      const re = new RegExp(_.escapeRegExp(this.state.businessValue), 'i');
-      const isMatch = (result) => re.test(result.title);
-      this.setState({
-        businessIsLoading: false,
-        businessResults: _.filter(this.state.businessObject, isMatch),
-      });
-    }, 500);
-  }
+  defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
 
   loadBusiness() {
     const keys = [];
@@ -72,12 +50,14 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     businessRef.on('value', (snapshot) => {
       snapshot.forEach((item) => {
         const itemVal = item.val();
-        const source = {
-          title: itemVal.name,
-          description: itemVal.address,
-          image: itemVal.photoUrl,
-        };
-        keys.push(source);
+        if (itemVal.isActive) {
+          const source = {
+            key: item.key,
+            text: itemVal.name,
+            value: item.key,
+          };
+          keys.push(source);
+        }
       });
       this.setState({ businessObject: keys });
     });
@@ -157,7 +137,9 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     return null;
   };
 
-  handleChange = (e, { name, value }) => this.setState({ [name]: value });
+  handleChange = (e, { name, value }) => {
+    this.setState({ [name]: value });
+  };
 
   openAddModal = () => {
     this.setState({ isEditingModal: false });
@@ -166,8 +148,8 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   }
 
   closeAddModal = () => {
-    this.setState({ name: '' });
-    this.setState({ description: '' });
+    this.setState({ promoName: '' });
+    this.setState({ promoDescription: '' });
     this.setState({ expireDate: null });
     this.setState({ imageUrl: this.defaultImage });
     this.setState({ showAddModal: false });
@@ -181,11 +163,11 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     });
 
     if (this.promoObject) {
-      this.setState({ name: this.promoObject.name });
-      this.setState({ description: this.promoObject.description });
+      this.setState({ promoName: this.promoObject.name });
+      this.setState({ promoDescription: this.promoObject.description });
       this.setState({ expireDate: moment(this.promoObject.expireDate) });
       this.setState({ imageUrl: this.promoObject.imageUrl });
-      this.setState({ businessValue: this.promoObject.business.name });
+      this.setState({ businessId: this.promoObject.business.id });
       this.setState({ isEditingModal: true });
       this.setState({ modalTitle: 'Modificar Promoción' });
       this.setState({ showAddModal: true });
@@ -207,11 +189,12 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
       description: this.promoObject.description,
       expireDate: this.promoObject.expireDate,
       imageUrl: this.promoObject.imageUrl,
-      business: { name: this.promoObject.business.name },
+      business: { id: this.promoObject.business.id, name: this.promoObject.business.name },
       isActive: false,
     };
     const updates = {};
     updates[`/promos/${key}`] = postData;
+    updates[`promosBusiness/${this.promoObject.business.id}/promos/${key}`] = postData;
     firebase.database().ref().update(updates).then(() => {
       this.setState({ promoIsLoading: false });
       this.loadPromos();
@@ -233,49 +216,59 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     this.setState({ openMessageModal: false });
   }
 
+  findBusiness(business) {
+    return business.key === this;
+  }
+
   writePromoData = (e) => {
     e.preventDefault();
-    this.setState({ promoIsLoading: true });
-
-    const { name, description, expireDate, imageUrl, businessValue } = this.state;
-    if (this.validatePromoModal(name, description, expireDate.format(), imageUrl, businessValue)) {
-      if (this.state.isEditingModal) {
-        const key = this.state.checkPromo;
-        const postData = {
-          name,
-          description,
-          expireDate: expireDate.format(),
-          imageUrl,
-          business: { name: businessValue },
-          isActive: true,
-        };
-        const updates = {};
-        updates[`/promos/${key}`] = postData;
-        firebase.database().ref().update(updates).then(() => {
-          this.setState({ promoIsLoading: false });
-          this.setState({ checkPromo: '' });
-          this.loadPromos();
-          this.closeAddModal();
-          this.setState({ openMessageModal: true });
-          this.setState({ modalMessage: 'Promoción actualizada exitosamente' });
-        });
-      } else {
-        const newKey = firebase.database().ref().child('promos').push().key;
-        firebase.database().ref(`promos/${newKey}`).set({
-          name,
-          description,
-          expireDate: expireDate.format(),
-          imageUrl,
-          business: { name: businessValue },
-          promoCreationDate: moment().format(),
-          isActive: true,
-        }).then(() => {
-          this.setState({ promoIsLoading: false });
-          this.closeAddModal();
-          this.setState({ openMessageModal: true });
-          this.setState({ modalMessage: 'Promoción agregada exitosamente' });
-        });
-      }
+    const { promoName, promoDescription, expireDate, imageUrl, businessId } = this.state;
+    if (this.validatePromoModal(promoName, promoDescription, expireDate.format(), imageUrl, businessId)) {
+      const businessObject = this.state.businessObject.find(this.findBusiness, businessId);
+      const promosBusinessRef = firebase.database().ref('/promosBusiness/' + businessId);
+      promosBusinessRef.once('value', (snapshot) => {
+        if (this.state.isEditingModal) {
+          const key = this.state.checkPromo;
+          const postData = {
+            name: promoName,
+            description: promoDescription,
+            expireDate: expireDate.format(),
+            imageUrl,
+            business: { id: businessObject.key, name: businessObject.text },
+            isActive: true,
+          };
+          const updates = {};
+          updates[`/promos/${key}`] = postData;
+          updates[`promosBusiness/${businessId}/promos/${key}`] = postData;
+          firebase.database().ref().update(updates).then(() => {
+            this.setState({ promoIsLoading: false });
+            this.setState({ checkPromo: '' });
+            this.loadPromos();
+            this.closeAddModal();
+            this.setState({ openMessageModal: true });
+            this.setState({ modalMessage: 'Promoción actualizada exitosamente' });
+          });
+        } else {
+          const newKey = firebase.database().ref().child('promos').push().key;
+          const postDataPromo = {
+            name: promoName,
+            description: promoDescription,
+            expireDate: expireDate.format(),
+            imageUrl,
+            business: { id: businessObject.key, name: businessObject.text },
+            promoCreationDate: moment().format(),
+            isActive: true,
+          };
+          firebase.database().ref(`promos/${newKey}`).set(postDataPromo).then(() => {
+            firebase.database().ref(`promosBusiness/${businessId}/promos/${newKey}`).set(postDataPromo).then(() => {
+              this.setState({ promoIsLoading: false });
+              this.closeAddModal();
+              this.setState({ openMessageModal: true });
+              this.setState({ modalMessage: 'Promoción agregada exitosamente' });
+            });
+          });
+        }
+      });
     } else {
       this.setState({ promoIsLoading: false });
       this.setState({ openMessageModal: true });
@@ -283,14 +276,13 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     }
   }
 
-  validatePromoModal = (name, description, expireDate, imageUrl, businessName) => {
-    if (name && description && expireDate && businessName) {
-      if (name !== '' && description !== '' && expireDate !== '' && businessName !== '' &&
+  validatePromoModal = (promoName, promoDescription, expireDate, imageUrl, businessId) => {
+    if (promoName && promoDescription && expireDate && businessId) {
+      if (promoName !== '' && promoDescription !== '' && expireDate !== '' && businessId !== '' &&
       imageUrl !== this.defaultImage) {
         return true;
       }
     }
-    this.setState({ openMessageModal: true });
     return false;
   }
 
@@ -314,9 +306,10 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
 
   render() {
     const promoTable = this.generatePromoList();
-    const { promoDataIsLoading, checkPromo, showAddModal, modalTitle, imageUrl, name, description,
-    expireDate, promoIsLoading, imageIsLoading, openConfirmDeleteModal, openMessageModal, modalMessage, promoSearch } = this.state;
-    const { businessIsLoading, businessValue, businessResults } = this.state;
+    const { promoDataIsLoading, checkPromo, showAddModal, modalTitle, imageUrl, promoName, promoDescription,
+    expireDate, promoIsLoading, imageIsLoading, openConfirmDeleteModal, openMessageModal, modalMessage, 
+    businessId, promoSearch } = this.state;
+    const { businessIsLoading, businessObject, businessResults } = this.state;
     const { tableColumn, tableColumnDirection } = this.state;
     return (
       <div>
@@ -347,8 +340,8 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             <Table.Row>
               <Table.HeaderCell></Table.HeaderCell>
               <Table.HeaderCell>Imagen</Table.HeaderCell>
-              <Table.HeaderCell sorted={tableColumn === 'name' ? tableColumnDirection : null} onClick={this.handleSort('name')}>Nombre de Promoción</Table.HeaderCell>
-              <Table.HeaderCell sorted={tableColumn === 'description' ? tableColumnDirection : null} onClick={this.handleSort('description')}>Descripción</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'promoName' ? tableColumnDirection : null} onClick={this.handleSort('promoName')}>Nombre de Promoción</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'promoDescription' ? tableColumnDirection : null} onClick={this.handleSort('promoDescription')}>Descripción</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'business.name' ? tableColumnDirection : null} onClick={this.handleSort('business.name')}>Tienda</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'creationDate' ? tableColumnDirection : null} onClick={this.handleSort('creationDate')}>Fecha de Creación</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'expireDate' ? tableColumnDirection : null} onClick={this.handleSort('expireDate')}>Fecha de Expiración</Table.HeaderCell>
@@ -396,26 +389,27 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Segment inverted color="blue"><Modal.Header><Header as="h3" inverted>{modalTitle}</Header></Modal.Header></Segment>
           <Modal.Content image>
             <Modal.Description>
-              <Form>
+              <Form onSubmit={this.writePromoData}>
                 <Form.Field required>
                   <label>Nombre de Promoción</label>
-                  <Form.Input name="name" value={name} placeholder="Nombre de Promoción" onChange={this.handleChange} />
+                  <Form.Input name="promoName" value={promoName} placeholder="Nombre de Promoción" onChange={this.handleChange} />
                 </Form.Field>
                 <Form.Field required>
                   <label>Descripción</label>
-                  <Form.Input name="description" value={description} placeholder="Descripción" onChange={this.handleChange} />
+                  <Form.Input name="promoDescription" value={promoDescription} placeholder="Descripción" onChange={this.handleChange} />
                 </Form.Field>
                 <Form.Field required>
                   <label>Tienda</label>
                   <Grid>
                     <Grid.Column width={8}>
-                      <Search
+                      <Dropdown
+                        selection
+                        search
+                        name="businessId"
                         loading={businessIsLoading}
-                        onResultSelect={this.handleBusinessResultSelect}
-                        onSearchChange={this.handleBusinessSearchChange}
-                        results={businessResults}
-                        value={businessValue}
-                        onBlur={this.handleBusinessOnBlur}
+                        onChange={this.handleChange}
+                        options={businessObject}
+                        value={businessId}
                       />
                     </Grid.Column>
                   </Grid>
@@ -439,11 +433,11 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                     <Dimmer active={imageIsLoading}>
                       <Loader indeterminate>Cargando Imagen</Loader>
                     </Dimmer>
-                    <Image src={imageUrl} size="medium" shape="rounded" />
+                    <Image src={imageUrl} centered size="medium" shape="rounded" />
                   </Segment>
                   <input type="file" id="input" onChange={this.handleFiles} />
                 </Form.Field>
-                <Button primary floated="right" loading={promoIsLoading} onClick={this.writePromoData}>Guardar</Button>
+                <Button primary floated="right" loading={promoIsLoading} >Guardar</Button>
                 <Button floated="right" color="red" onClick={this.closeAddModal}>Cancelar</Button>
               </Form>
             </Modal.Description>

@@ -19,12 +19,17 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     openConfirmDeleteModal: false,
     modalMessage: '',
     businessSearch: '',
+    photoUrl: this.defaultImage,
   };
 
   componentWillMount() {
-    this.setState({ photoUrl: this.defaultImage });
-    this.loadBusiness();
-    this.loadCategories();
+    const user = firebase.auth().currentUser;
+    if (!user) { 
+      window.location = '/';
+    } else {
+      this.loadBusiness();
+      this.loadCategories();
+    }
   }
 
   defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
@@ -94,7 +99,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
 
   generateBusinessList = () => {
     if (this.state.businessObject.length > 0) {
-      console.log(this.state.businessObject);
       return this.state.businessObject.map((business) =>
         <Table.Row key={business.key}>
           <Table.Cell>
@@ -297,7 +301,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
         return true;
       }
     }
-    this.setState({ openMessageModal: true });
     return false;
   }
 
@@ -409,7 +412,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
                     <Dimmer active={imageIsLoading}>
                       <Loader indeterminate>Cargando Imagen</Loader>
                     </Dimmer>
-                    <Image src={photoUrl} size="medium" shape="rounded" />
+                    <Image src={photoUrl} centered size="medium" shape="rounded" />
                   </Segment>
                   <input type="file" id="input" onChange={this.handleFiles} />
                 </Form.Field>

@@ -13,11 +13,16 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
     userSearch: '',
     tableColumn: null,
     tableColumnDirection: null,
+    businessImage: this.defaultImage,
   };
 
   componentWillMount() {
-    this.setState({ businessImage: this.defaultImage });
-    this.loadUsers();
+    const user = firebase.auth().currentUser;
+    if (!user) { 
+      window.location = '/';
+    } else {
+      this.loadUsers();
+    }
   }
 
   loadUsers() {
