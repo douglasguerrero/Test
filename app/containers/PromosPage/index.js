@@ -21,15 +21,19 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     isEditingModal: false,
     openMessageModal: false,
     openConfirmDeleteModal: false,
-    tableColumn: null,
-    tableColumnDirection: null,
     promoObject: [],
+    promoObjectForDisplay: [],
     businessObject: [],
     businessResults: [],
     modalMessage: '',
     promoSearch: '',
     imageUrl: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
     dateFormat: moment.localeData('es').longDateFormat('LL'),
+    paginationSize: 20,
+    activePaginationButton: 1,
+    firstPaginationGridNumber: 1,
+    tableColumn: null,
+    tableColumnDirection: null,
   };
 
   componentWillMount() {
@@ -43,6 +47,28 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   }
 
   defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
+
+  onPaginationArrowClick = (direction) => {
+    if (direction === 'right') {
+      const firstPaginationGridNumber = this.state.firstPaginationGridNumber + 5;
+      const position = firstPaginationGridNumber * this.state.paginationSize;
+      if (this.state.promoObject[position - 1]) {
+        this.setState({ firstPaginationGridNumber });
+        this.onPaginationItemClick(firstPaginationGridNumber - 1);
+      }
+    } else if (direction === 'left') {
+      const firstPaginationGridNumber = this.state.firstPaginationGridNumber - 5;
+      const position = firstPaginationGridNumber * this.state.paginationSize;
+      if (this.state.promoObject[position - 1]) {
+        this.setState({ firstPaginationGridNumber });
+        this.onPaginationItemClick(firstPaginationGridNumber - 1);
+      }
+    }
+  }
+
+  onPaginationItemClick = (paginationNumber) => {
+    this.loadItemsForDisplay(this.state.promoObject, paginationNumber);
+  }
 
   loadBusiness() {
     const keys = [];
@@ -76,8 +102,37 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
       });
       this.setState({ promoObject: keys });
       this.setState({ promoDataIsLoading: false });
+      this.loadItemsForDisplay(keys, 0);
     });
   }
+
+  loadItemsForDisplay = (promoObject, paginationNumber) => {
+    const promoObjectIndex = paginationNumber * this.state.paginationSize;
+    const paginationLimit = promoObjectIndex + this.state.paginationSize;
+    const promoObjectForDisplay = [];
+    for (let i = promoObjectIndex; i < paginationLimit; i++) {
+      if (promoObject[i]) {
+        promoObjectForDisplay.push(promoObject[i]);
+      }
+    }
+    this.setState({ promoObjectForDisplay });
+    this.setState({ activePaginationButton: paginationNumber + 1 });
+  }
+
+  generatePagination = () => {
+    if (this.state.promoObject.length > 0) {
+      const paginationHtml = [<Menu.Item key={'left'} as="a" icon onClick={() => this.onPaginationArrowClick('left')}><Icon name="angle double left" /></Menu.Item>];
+      for (let i = this.state.firstPaginationGridNumber - 1; i < this.state.firstPaginationGridNumber + 4; i++) {
+        const verifyObjectExist = this.state.paginationSize * i;
+        if (this.state.promoObject[verifyObjectExist]) {
+          paginationHtml.push(<Menu.Item key={i} as="a" active={this.state.activePaginationButton === i + 1} onClick={() => this.onPaginationItemClick(i)}>{i + 1}</Menu.Item>);
+        }
+      }
+      paginationHtml.push(<Menu.Item key={'right'} as="a" icon onClick={() => this.onPaginationArrowClick('right')}><Icon name="angle double right" /></Menu.Item>);
+      return paginationHtml;
+    }
+    return null;
+  };
 
   filterPromos = () => {
     if (this.state.promoSearch !== '') {
@@ -87,6 +142,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
         return name.toLowerCase().indexOf(this.state.promoSearch) !== -1;
       });
       this.setState({ promoObject: filteredPromoObject, tableColumn: null, tableColumnDirection: null});
+      this.loadItemsForDisplay(filteredPromoObject, 0);
     } else {
       this.loadPromos();
     }
@@ -102,19 +158,20 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
       this.setState({ tableColumnDirection: this.state.tableColumnDirection === 'ascending' ? 'descending' : 'ascending' });
     }
     this.setState({ promoObject });
+    this.loadItemsForDisplay(promoObject, this.state.activePaginationButton - 1);
   }
 
   statusLabel = (date) => {
     const expirationDate = moment(date).format();
-    if (moment().format() < expirationDate) {
+    if (moment().format() <= expirationDate) {
       return <Label color="green" key="green">Activo</Label>;
     }
     return <Label color="red" key="red">Expirado</Label>;
   };
 
   generatePromoList = () => {
-    if (this.state.promoObject.length > 0) {
-      return this.state.promoObject.map((promo) =>
+    if (this.state.promoObjectForDisplay.length > 0) {
+      return this.state.promoObjectForDisplay.map((promo) =>
         <Table.Row key={promo.key}>
           <Table.Cell>
             <Checkbox
@@ -128,7 +185,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Table.Cell>{promo.name}</Table.Cell>
           <Table.Cell>{promo.description}</Table.Cell>
           <Table.Cell>{promo.business.name}</Table.Cell>
-          <Table.Cell>{moment(promo.promoCreationDate).format('LL')}</Table.Cell>
+          <Table.Cell>{moment(promo.createdAt).format('LL')}</Table.Cell>
           <Table.Cell>{moment(promo.expireDate).format('LL')}</Table.Cell>
           <Table.Cell>{this.statusLabel(promo.expireDate)}</Table.Cell>
         </Table.Row>
@@ -233,6 +290,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             name: promoName,
             description: promoDescription,
             expireDate: expireDate.format(),
+            createdAt: createdAt.format(),
             imageUrl,
             business: { id: businessObject.key, name: businessObject.text },
             isActive: true,
@@ -256,7 +314,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             expireDate: expireDate.format(),
             imageUrl,
             business: { id: businessObject.key, name: businessObject.text },
-            promoCreationDate: moment().format(),
+            createdAt: moment().format(),
             isActive: true,
           };
           firebase.database().ref(`promos/${newKey}`).set(postDataPromo).then(() => {
@@ -306,6 +364,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
 
   render() {
     const promoTable = this.generatePromoList();
+    const promoPagination = this.generatePagination();
     const { promoDataIsLoading, checkPromo, showAddModal, modalTitle, imageUrl, promoName, promoDescription,
     expireDate, promoIsLoading, imageIsLoading, openConfirmDeleteModal, openMessageModal, modalMessage, 
     businessId, promoSearch } = this.state;
@@ -368,17 +427,8 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             </Table.Row>
             <Table.Row>
               <Table.HeaderCell colSpan="8">
-                <Menu floated="right" pagination>
-                  <Menu.Item as="a" icon>
-                    <Icon name="left chevron" />
-                  </Menu.Item>
-                  <Menu.Item as="a">1</Menu.Item>
-                  <Menu.Item as="a">2</Menu.Item>
-                  <Menu.Item as="a">3</Menu.Item>
-                  <Menu.Item as="a">4</Menu.Item>
-                  <Menu.Item as="a" icon>
-                    <Icon name="right chevron" />
-                  </Menu.Item>
+                <Menu floated="right" pagination pointing secondary>
+                  { promoPagination }
                 </Menu>
               </Table.HeaderCell>
             </Table.Row>

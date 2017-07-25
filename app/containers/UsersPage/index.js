@@ -10,10 +10,15 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
   state = {
     imageIsLoading: false,
     userDataIsLoading: false,
+    userObject: [],
+    userObjectForDisplay: [],
     userSearch: '',
+    defaultImage : 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
+    paginationSize: 1,
+    activePaginationButton: 20,
+    firstPaginationGridNumber: 1,
     tableColumn: null,
     tableColumnDirection: null,
-    businessImage: this.defaultImage,
   };
 
   componentWillMount() {
@@ -23,6 +28,28 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
     } else {
       this.loadUsers();
     }
+  }
+
+  onPaginationArrowClick = (direction) => {
+    if (direction === 'right') {
+      const firstPaginationGridNumber = this.state.firstPaginationGridNumber + 5;
+      const position = firstPaginationGridNumber * this.state.paginationSize;
+      if (this.state.userObject[position - 1]) {
+        this.setState({ firstPaginationGridNumber });
+        this.onPaginationItemClick(firstPaginationGridNumber - 1);
+      }
+    } else if (direction === 'left') {
+      const firstPaginationGridNumber = this.state.firstPaginationGridNumber - 5;
+      const position = firstPaginationGridNumber * this.state.paginationSize;
+      if (this.state.userObject[position - 1]) {
+        this.setState({ firstPaginationGridNumber });
+        this.onPaginationItemClick(firstPaginationGridNumber - 1);
+      }
+    }
+  }
+
+  onPaginationItemClick = (paginationNumber) => {
+    this.loadItemsForDisplay(this.state.userObject, paginationNumber);
   }
 
   loadUsers() {
@@ -38,8 +65,37 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
       });
       this.setState({ userObject: keys });
       this.setState({ userDataIsLoading: false });
+      this.loadItemsForDisplay(keys, 0);
     });
   }
+
+  loadItemsForDisplay = (userObject, paginationNumber) => {
+    const userObjectIndex = paginationNumber * this.state.paginationSize;
+    const paginationLimit = userObjectIndex + this.state.paginationSize;
+    const userObjectForDisplay = [];
+    for (let i = userObjectIndex; i < paginationLimit; i++) {
+      if (userObject[i]) {
+        userObjectForDisplay.push(userObject[i]);
+      }
+    }
+    this.setState({ userObjectForDisplay });
+    this.setState({ activePaginationButton: paginationNumber + 1 });
+  }
+
+  generatePagination = () => {
+    if (this.state.userObject.length > 0) {
+      const paginationHtml = [<Menu.Item key={'left'} as="a" icon onClick={() => this.onPaginationArrowClick('left')}><Icon name="angle double left" /></Menu.Item>];
+      for (let i = this.state.firstPaginationGridNumber - 1; i < this.state.firstPaginationGridNumber + 4; i++) {
+        const verifyObjectExist = this.state.paginationSize * i;
+        if (this.state.userObject[verifyObjectExist]) {
+          paginationHtml.push(<Menu.Item key={i} as="a" active={this.state.activePaginationButton === i + 1} onClick={() => this.onPaginationItemClick(i)}>{i + 1}</Menu.Item>);
+        }
+      }
+      paginationHtml.push(<Menu.Item key={'right'} as="a" icon onClick={() => this.onPaginationArrowClick('right')}><Icon name="angle double right" /></Menu.Item>);
+      return paginationHtml;
+    }
+    return null;
+  };
 
   handleChange = (e, { name, value }) => this.setState({ [name]: value });
 
@@ -51,6 +107,7 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
         return name.toLowerCase().indexOf(this.state.userSearch) !== -1;
       });
       this.setState({ userObject: filteredUserObject, tableColumn: null, tableColumnDirection: null });
+      this.loadItemsForDisplay(filteredUserObject, 0);
     } else {
       this.loadUsers();
     }
@@ -66,13 +123,14 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
       this.setState({ tableColumnDirection: this.state.tableColumnDirection === 'ascending' ? 'descending' : 'ascending' });
     }
     this.setState({ userObject });
+    this.loadItemsForDisplay(userObject, this.state.activePaginationButton - 1);
   }
 
   generateUserList = () => {
-    if (this.state.userObject.length > 0) {
-      return this.state.userObject.map((user) =>
+    if (this.state.userObjectForDisplay.length > 0) {
+      return this.state.userObjectForDisplay.map((user) =>
         <Table.Row key={user.key}>
-          <Table.Cell><Image src={user.image} size="small" /></Table.Cell>
+          <Table.Cell><Image src={this.state.defaultImage} size="small" /></Table.Cell>
           <Table.Cell>{user.firstName} {user.lastName}</Table.Cell>
           <Table.Cell>{user.email}</Table.Cell>
           <Table.Cell>{user.phone}</Table.Cell>
@@ -82,9 +140,9 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
     return null;
   };
 
-  defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
   render() {
     const userTable = this.generateUserList();
+    const userPagination = this.generatePagination();
     const { userDataIsLoading, userSearch } = this.state;
     const { tableColumn, tableColumnDirection } = this.state;
     return (
@@ -95,13 +153,13 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
         <Table sortable celled color="blue">
           <Table.Header >
             <Table.Row>
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="4">
                 <Segment inverted color="blue"><Header as="h1">Usuarios</Header></Segment></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Header >
             <Table.Row>
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="4">
                 <Input
                   action fluid name="userSearch" value={userSearch} type="text" placeholder="Buscar Usuario..."
                   onChange={this.handleChange}
@@ -125,18 +183,9 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
           </Table.Body>
           <Table.Footer>
             <Table.Row>
-              <Table.HeaderCell colSpan="6">
-                <Menu floated="right" pagination>
-                  <Menu.Item as="a" icon>
-                    <Icon name="left chevron" />
-                  </Menu.Item>
-                  <Menu.Item as="a">1</Menu.Item>
-                  <Menu.Item as="a">2</Menu.Item>
-                  <Menu.Item as="a">3</Menu.Item>
-                  <Menu.Item as="a">4</Menu.Item>
-                  <Menu.Item as="a" icon>
-                    <Icon name="right chevron" />
-                  </Menu.Item>
+              <Table.HeaderCell colSpan="4">
+                <Menu floated="right" pagination pointing secondary>
+                  { userPagination }
                 </Menu>
               </Table.HeaderCell>
             </Table.Row>

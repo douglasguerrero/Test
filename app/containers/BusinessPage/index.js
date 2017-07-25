@@ -7,6 +7,8 @@ import firebase from 'firebase';
 
 export class BusinessPage extends React.PureComponent { // eslint-disable-line react/prefer-stateless-function
   state = {
+    businessObject: [],
+    businessObjectForDisplay: [],
     categoriesObject: [],
     categories: [],
     imageIsLoading: false,
@@ -19,7 +21,12 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     openConfirmDeleteModal: false,
     modalMessage: '',
     businessSearch: '',
-    photoUrl: this.defaultImage,
+    photoUrl: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
+    paginationSize: 1,
+    activePaginationButton: 1,
+    firstPaginationGridNumber: 1,
+    tableColumn: null,
+    tableColumnDirection: null,
   };
 
   componentWillMount() {
@@ -33,6 +40,28 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   }
 
   defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
+
+  onPaginationArrowClick = (direction) => {
+    if (direction === 'right') {
+      const firstPaginationGridNumber = this.state.firstPaginationGridNumber + 5;
+      const position = firstPaginationGridNumber * this.state.paginationSize;
+      if (this.state.businessObject[position - 1]) {
+        this.setState({ firstPaginationGridNumber });
+        this.onPaginationItemClick(firstPaginationGridNumber - 1);
+      }
+    } else if (direction === 'left') {
+      const firstPaginationGridNumber = this.state.firstPaginationGridNumber - 5;
+      const position = firstPaginationGridNumber * this.state.paginationSize;
+      if (this.state.businessObject[position - 1]) {
+        this.setState({ firstPaginationGridNumber });
+        this.onPaginationItemClick(firstPaginationGridNumber - 1);
+      }
+    }
+  }
+
+  onPaginationItemClick = (paginationNumber) => {
+    this.loadItemsForDisplay(this.state.businessObject, paginationNumber);
+  }
 
   loadBusiness() {
     this.setState({ businessDataIsLoading: true });
@@ -48,6 +77,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
         }
       });
       this.setState({ businessObject: keys });
+      this.loadItemsForDisplay(keys, 0);
       this.setState({ businessDataIsLoading: false });
     });
   }
@@ -69,6 +99,34 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     });
   }
 
+  loadItemsForDisplay = (businessObject, paginationNumber) => {
+    const businessObjectIndex = paginationNumber * this.state.paginationSize;
+    const paginationLimit = businessObjectIndex + this.state.paginationSize;
+    const businessObjectForDisplay = [];
+    for (let i = businessObjectIndex; i < paginationLimit; i++) {
+      if (businessObject[i]) {
+        businessObjectForDisplay.push(businessObject[i]);
+      }
+    }
+    this.setState({ businessObjectForDisplay });
+    this.setState({ activePaginationButton: paginationNumber + 1 });
+  }
+
+  generatePagination = () => {
+    if (this.state.businessObject.length > 0) {
+      const paginationHtml = [<Menu.Item key={'left'} as="a" icon onClick={() => this.onPaginationArrowClick('left')}><Icon name="angle double left" /></Menu.Item>];
+      for (let i = this.state.firstPaginationGridNumber - 1; i < this.state.firstPaginationGridNumber + 4; i++) {
+        const verifyObjectExist = this.state.paginationSize * i;
+        if (this.state.businessObject[verifyObjectExist]) {
+          paginationHtml.push(<Menu.Item key={i} as="a" active={this.state.activePaginationButton === i + 1} onClick={() => this.onPaginationItemClick(i)}>{i + 1}</Menu.Item>);
+        }
+      }
+      paginationHtml.push(<Menu.Item key={'right'} as="a" icon onClick={() => this.onPaginationArrowClick('right')}><Icon name="angle double right" /></Menu.Item>);
+      return paginationHtml;
+    }
+    return null;
+  };
+
   filterBusiness = () => {
     if (this.state.businessSearch !== '') {
       const businessObjectArray = this.state.businessObject;
@@ -77,6 +135,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
         return name.toLowerCase().indexOf(this.state.businessSearch) !== -1;
       });
       this.setState({ businessObject: filteredBusinessObject });
+      this.loadItemsForDisplay(filteredBusinessObject, 0);
     } else {
       this.loadBusiness();
     }
@@ -97,9 +156,22 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     return categoriesText;
   };
 
+  handleSort = (clickedColumn) => () => {
+    let { businessObject } = this.state;
+    if (this.state.tableColumn !== clickedColumn) {
+      businessObject = _.sortBy(businessObject, [clickedColumn]);
+      this.setState({ tableColumn: clickedColumn, tableColumnDirection: 'ascending' });
+    } else {
+      businessObject = businessObject.reverse();
+      this.setState({ tableColumnDirection: this.state.tableColumnDirection === 'ascending' ? 'descending' : 'ascending' });
+    }
+    this.setState({ businessObject });
+    this.loadItemsForDisplay(businessObject, this.state.activePaginationButton - 1);
+  }
+
   generateBusinessList = () => {
-    if (this.state.businessObject.length > 0) {
-      return this.state.businessObject.map((business) =>
+    if (this.state.businessObjectForDisplay.length > 0) {
+      return this.state.businessObjectForDisplay.map((business) =>
         <Table.Row key={business.key}>
           <Table.Cell>
             <Checkbox
@@ -306,14 +378,16 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
 
   render() {
     const businessTable = this.generateBusinessList();
+    const businessPagination = this.generatePagination();
     const { photoUrl, imageIsLoading, showAddModal, businessIsLoading, name, openConfirmDeleteModal, modalMessage, categories,
       address, phoneNumber, location, checkBusiness, modalTitle, openMessageModal, businessDataIsLoading, businessSearch } = this.state;
+    const { tableColumn, tableColumnDirection } = this.state;
     return (
       <div>
         <Dimmer active={businessDataIsLoading} inverted>
           <Loader />
         </Dimmer>
-        <Table celled color="blue">
+        <Table sortable celled color="blue">
           <Table.Header >
             <Table.Row>
               <Table.HeaderCell colSpan="7">
@@ -337,10 +411,10 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
             <Table.Row>
               <Table.HeaderCell></Table.HeaderCell>
               <Table.HeaderCell>Imagen</Table.HeaderCell>
-              <Table.HeaderCell>Nombre</Table.HeaderCell>
-              <Table.HeaderCell>Dirección</Table.HeaderCell>
-              <Table.HeaderCell>Teléfono</Table.HeaderCell>
-              <Table.HeaderCell>Ciudad</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'name' ? tableColumnDirection : null} onClick={this.handleSort('name')}>Nombre</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'address' ? tableColumnDirection : null} onClick={this.handleSort('address')}>Dirección</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'phoneNumber' ? tableColumnDirection : null} onClick={this.handleSort('phoneNumber')}>Teléfono</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'location' ? tableColumnDirection : null} onClick={this.handleSort('location')}>Ciudad</Table.HeaderCell>
               <Table.HeaderCell width={4}>Categorias</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
@@ -364,17 +438,8 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
             </Table.Row>
             <Table.Row>
               <Table.HeaderCell colSpan="7">
-                <Menu floated="right" pagination>
-                  <Menu.Item as="a" icon>
-                    <Icon name="left chevron" />
-                  </Menu.Item>
-                  <Menu.Item as="a">1</Menu.Item>
-                  <Menu.Item as="a">2</Menu.Item>
-                  <Menu.Item as="a">3</Menu.Item>
-                  <Menu.Item as="a">4</Menu.Item>
-                  <Menu.Item as="a" icon>
-                    <Icon name="right chevron" />
-                  </Menu.Item>
+                <Menu floated="right" pagination pointing secondary>
+                  { businessPagination }
                 </Menu>
               </Table.HeaderCell>
             </Table.Row>
