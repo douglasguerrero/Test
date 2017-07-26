@@ -22,7 +22,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     modalMessage: '',
     businessSearch: '',
     photoUrl: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
-    paginationSize: 1,
+    paginationSize: 20,
     activePaginationButton: 1,
     firstPaginationGridNumber: 1,
     tableColumn: null,
