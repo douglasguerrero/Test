@@ -16,6 +16,7 @@ export default class PrimaryMenu extends Component {
 
     if (name === 'logout') {
       firebase.auth().signOut().then(() => {
+        localStorage.clear();
         window.location = '/';
       });
     }

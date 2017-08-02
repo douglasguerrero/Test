@@ -17,9 +17,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     businessDataIsLoading: false,
     checkBusiness: false,
     isEditingModal: false,
-    openMessageModal: false,
     openConfirmDeleteModal: false,
-    modalMessage: '',
     businessSearch: '',
     photoUrl: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
     paginationSize: 20,
@@ -30,7 +28,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   };
 
   componentWillMount() {
-    const user = firebase.auth().currentUser;
+    const user = JSON.parse(localStorage.getItem('user'));
     if (!user) { 
       window.location = '/';
     } else {
@@ -230,9 +228,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     this.setState({ photoUrl: this.defaultImage });
     this.setState({ showAddModal: false });
   }
-  closeMessageModal = () => {
-    this.setState({ openMessageModal: false });
-  }
 
   handleFiles = (e) => {
     this.setState({ imageIsLoading: true });
@@ -285,8 +280,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
             this.setState({ checkBusiness: '' });
             this.loadBusiness();
             this.closeAddModal();
-            this.setState({ openMessageModal: true });
-            this.setState({ modalMessage: 'Tienda actualizada exitosamente' });
           });
         });
       } else {
@@ -307,15 +300,11 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           }).then(() => {
             this.setState({ businessIsLoading: false });
             this.closeAddModal();
-            this.setState({ openMessageModal: true });
-            this.setState({ modalMessage: 'Tienda agregada exitosamente' });
           });
         });
       }
     } else {
       this.setState({ businessIsLoading: false });
-      this.setState({ openMessageModal: true });
-      this.setState({ modalMessage: 'Favor llenar todos los campos requeridos' });
     }
   }
 
@@ -352,8 +341,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
         this.setState({ checkBusiness: '' });
         this.loadBusiness();
         this.closeConfirmDeleteModal();
-        this.setState({ openMessageModal: true });
-        this.setState({ modalMessage: 'Tienda borrada exitosamente' });
       });
     });
   }
@@ -379,8 +366,8 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   render() {
     const businessTable = this.generateBusinessList();
     const businessPagination = this.generatePagination();
-    const { photoUrl, imageIsLoading, showAddModal, businessIsLoading, name, openConfirmDeleteModal, modalMessage, categories,
-      address, phoneNumber, location, checkBusiness, modalTitle, openMessageModal, businessDataIsLoading, businessSearch } = this.state;
+    const { photoUrl, imageIsLoading, showAddModal, businessIsLoading, name, openConfirmDeleteModal, categories,
+      address, phoneNumber, location, checkBusiness, modalTitle, businessDataIsLoading, businessSearch } = this.state;
     const { tableColumn, tableColumnDirection } = this.state;
     return (
       <div>
@@ -486,20 +473,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
               </Form>
             </Modal.Description>
           </Modal.Content>
-        </Modal>
-
-        <Modal size={'small'} open={openMessageModal}>
-          <Segment inverted color="blue">
-            <Modal.Header>
-              <Header as="h3" inverted>Información</Header>
-            </Modal.Header>
-          </Segment>
-          <Modal.Content>
-            <p>{modalMessage}</p>
-          </Modal.Content>
-          <Modal.Actions>
-            <Button primary content="Ok" onClick={this.closeMessageModal} />
-          </Modal.Actions>
         </Modal>
 
         <Modal size={'small'} open={openConfirmDeleteModal}>

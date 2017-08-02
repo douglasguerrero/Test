@@ -31,6 +31,10 @@ export class HomePage extends React.PureComponent { // eslint-disable-line react
     if (this.props.username && this.props.username.trim().length > 0) {
       this.props.onSubmitForm();
     }
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) { 
+      window.location = '/';
+    }
   }
 
   render() {

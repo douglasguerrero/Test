@@ -22,7 +22,7 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
   };
 
   componentWillMount() {
-    const user = firebase.auth().currentUser;
+    const user = JSON.parse(localStorage.getItem('user'));
     if (!user) { 
       window.location = '/';
     } else {

@@ -22,6 +22,7 @@ export class LoginPage extends React.Component { // eslint-disable-line react/pr
     firebase.auth().signInWithEmailAndPassword(this.state.email, this.state.password).then(() => {
       const user = firebase.auth().currentUser;
       if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
         window.location = '/home';
       } else {
         this.setState({ isLoading: false });
