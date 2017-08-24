@@ -1,0 +1,20 @@
+react-boilerplate@3.4.0 d:\Douglas\Pocket Admin\Test
++-- UNMET PEER DEPENDENCY moment@2.18.1
++-- react@15.5.4 
+| `-- fbjs@0.8.12 
+|   `-- core-js@1.2.7 
++-- react-addons-shallow-compare@15.5.2 
++-- react-dates@11.0.1 
+| +-- airbnb-prop-types@2.5.3 
+| | +-- array.prototype.find@2.0.4 
+| | | `-- es-abstract@1.7.0 
+| | `-- is-regex@1.0.4 
+| +-- consolidated-events@1.0.1 
+| +-- lodash.throttle@4.1.1 
+| +-- react-moment-proptypes@1.4.0 
+| `-- react-portal@3.1.0 
++-- react-dom@15.5.4 
+| `-- fbjs@0.8.12 
+|   `-- core-js@1.2.7 
+`-- UNMET PEER DEPENDENCY webpack@2.2.0-rc.3
+
