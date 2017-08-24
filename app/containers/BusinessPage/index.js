@@ -29,7 +29,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
 
   componentWillMount() {
     const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) { 
+    if (!user) {
       window.location = '/';
     } else {
       this.loadBusiness();
@@ -252,6 +252,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     e.preventDefault();
     this.setState({ businessIsLoading: true });
     const { name, address, phoneNumber, location, photoUrl, categories } = this.state;
+
     if (this.validateBusinessModal(name, address, phoneNumber, location, photoUrl, categories)) {
       if (this.state.isEditingModal) {
         const key = this.state.checkBusiness;
@@ -283,24 +284,41 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           });
         });
       } else {
+        const updates = {};
+        const selectedCategories = [];
         const newKey = firebase.database().ref().child('business').push().key;
-        firebase.database().ref(`business/${newKey}`).set({
-          name,
-          address,
-          phoneNumber,
-          location,
-          photoUrl,
-          categories,
-          isActive: true,
-        }).then(() => {
-          firebase.database().ref(`promosBusiness/${newKey}`).set({
-            businessName: name,
-            isBusinessActive: true,
-            promos: [],
-          }).then(() => {
-            this.setState({ businessIsLoading: false });
-            this.closeAddModal();
+
+        categories.forEach((category) => {
+          this.state.categoriesObject.forEach((categoryObject) => {
+            if (categoryObject.key === category) {
+              selectedCategories.push({ key: categoryObject.key, name: categoryObject.text });
+            }
           });
+        });
+
+        updates[`business/${newKey}/name`] = name;
+        updates[`business/${newKey}/address`] = address;
+        updates[`business/${newKey}/phoneNumber`] = phoneNumber;
+        updates[`business/${newKey}/location`] = location;
+        updates[`business/${newKey}/photoUrl`] = photoUrl;
+        updates[`business/${newKey}/isActive`] = true;
+        updates[`promosBusiness/${newKey}`] = { businessName: name, isBusinessActive: true, promos: [] };
+
+        selectedCategories.forEach((categ) => {
+          updates[`business/${newKey}/categories/${categ.key}`] = true;
+
+          updates[`businessCategories/${categ.key}/categoryName`] = categ.name;
+          updates[`businessCategories/${categ.key}/businesses/${newKey}`] = { name, address, phoneNumber, location, photoUrl };
+        });
+
+        console.log('updates', updates);
+
+        firebase.database().ref().update(updates).then(() => {
+          this.setState({ businessIsLoading: false });
+          this.closeAddModal();
+        }).catch((err) => {
+          this.setState({ businessIsLoading: false });
+          console.log('error saving biz', err);
         });
       }
     } else {
@@ -312,7 +330,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     e.preventDefault();
     this.setState({ businessIsLoading: true });
     const key = this.state.checkBusiness;
-    const promosBusinessRef = firebase.database().ref('/promosBusiness/' + key);
+    const promosBusinessRef = firebase.database().ref(`/promosBusiness/${  key}`);
     promosBusinessRef.once('value', (snapshot) => {
       const promos = snapshot.val().promos ? snapshot.val().promos : [];
       this.state.businessObject.forEach((business) => {
