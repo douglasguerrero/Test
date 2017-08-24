@@ -142,7 +142,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   categories = (categories) => {
     let categoriesText = '';
     if (categories) {
-      categories.forEach((category) => {
+      Object.keys(categories).forEach((category) => {
         this.state.categoriesObject.forEach((categoryObject) => {
           if (categoryObject.key === category) {
             categoriesText += (`${categoryObject.text}, `);
@@ -252,6 +252,15 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     e.preventDefault();
     this.setState({ businessIsLoading: true });
     const { name, address, phoneNumber, location, photoUrl, categories } = this.state;
+    const selectedCategories = [];
+
+    categories.forEach((category) => {
+      this.state.categoriesObject.forEach((categoryObject) => {
+        if (categoryObject.key === category) {
+          selectedCategories.push({ key: categoryObject.key, name: categoryObject.text });
+        }
+      });
+    });
 
     if (this.validateBusinessModal(name, address, phoneNumber, location, photoUrl, categories)) {
       if (this.state.isEditingModal) {
@@ -285,16 +294,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
         });
       } else {
         const updates = {};
-        const selectedCategories = [];
         const newKey = firebase.database().ref().child('business').push().key;
-
-        categories.forEach((category) => {
-          this.state.categoriesObject.forEach((categoryObject) => {
-            if (categoryObject.key === category) {
-              selectedCategories.push({ key: categoryObject.key, name: categoryObject.text });
-            }
-          });
-        });
 
         updates[`business/${newKey}/name`] = name;
         updates[`business/${newKey}/address`] = address;
