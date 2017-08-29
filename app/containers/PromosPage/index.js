@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import _ from 'lodash';
-import { Dropdown, Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Search, Grid, Label } from 'semantic-ui-react';
+import { Dropdown, Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Grid, Label } from 'semantic-ui-react';
 import { SingleDatePicker } from 'react-dates';
 import moment from 'moment';
 import 'moment/src/locale/es';
@@ -26,7 +26,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     promoSearch: '',
     imageUrl: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
     dateFormat: moment.localeData('es').longDateFormat('LL'),
-    paginationSize: 20,
+    paginationSize: 15,
     activePaginationButton: 1,
     firstPaginationGridNumber: 1,
     tableColumn: null,
@@ -35,7 +35,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
 
   componentWillMount() {
     const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) { 
+    if (!user) {
       window.location = '/';
     } else {
       this.loadPromos();
@@ -48,15 +48,13 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   onPaginationArrowClick = (direction) => {
     if (direction === 'right') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber + 5;
-      const position = firstPaginationGridNumber * this.state.paginationSize;
-      if (this.state.promoObject[position - 1]) {
+      if (this.state.promoObject[firstPaginationGridNumber * this.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }
     } else if (direction === 'left') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber - 5;
-      const position = firstPaginationGridNumber * this.state.paginationSize;
-      if (this.state.promoObject[position - 1]) {
+      if (this.state.promoObject[firstPaginationGridNumber * this.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }
@@ -80,8 +78,6 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           keys.push(itemVal);
         }
       });
-
-    console.log(keys);
       this.setState({ promoObject: keys });
       this.loadItemsForDisplay(keys, 0);
       this.setState({ promoDataIsLoading: false });
@@ -142,7 +138,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
         const name = promoObject.name;
         return name.toLowerCase().indexOf(this.state.promoSearch) !== -1;
       });
-      this.setState({ promoObject: filteredPromoObject, tableColumn: null, tableColumnDirection: null});
+      this.setState({ promoObject: filteredPromoObject, tableColumn: null, tableColumnDirection: null });
       this.loadItemsForDisplay(filteredPromoObject, 0);
     } else {
       this.loadPromos();
@@ -165,13 +161,14 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   statusLabel = (initDate, expireDate) => {
     const initialDate = moment(initDate).format('MM/DD/YYYY');
     const expirationDate = moment(expireDate).format('MM/DD/YYYY');
-    if (moment().format('MM/DD/YYYY') <= initialDate) {
-      return <Label color="yellow" key="yellow">Pendiente</Label>;
-    } else if (moment().format('MM/DD/YYYY') <= expirationDate) {
+    const today = moment().format('MM/DD/YYYY');
+    if (today >= initialDate && today <= expirationDate) {
       return <Label color="green" key="green">Activo</Label>;
-    } else {
+    } else if (today > expirationDate) {
       return <Label color="red" key="red">Expirado</Label>;
     }
+
+    return <Label color="yellow" key="yellow">Pendiente</Label>;
   };
 
   generatePromoList = () => {
@@ -210,12 +207,17 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   }
 
   closeAddModal = () => {
+    this.setState({ imageUrl: this.defaultImage });
+    this.setState({ showAddModal: false });
+  }
+
+  cleanAddModal = () => {
     this.setState({ promoName: '' });
     this.setState({ promoDescription: '' });
+    this.setState({ businessId: null });
     this.setState({ initialDate: null });
     this.setState({ expireDate: null });
     this.setState({ imageUrl: this.defaultImage });
-    this.setState({ showAddModal: false });
   }
 
   openEditModal = () => {
@@ -284,7 +286,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     const { promoName, promoDescription, initialDate, expireDate, imageUrl, businessId } = this.state;
     if (this.validatePromoModal(promoName, promoDescription, initialDate.format(), expireDate.format(), imageUrl, businessId)) {
       const businessObject = this.state.businessObject.find(this.findBusiness, businessId);
-      const promosBusinessRef = firebase.database().ref('/promosBusiness/' + businessId);
+      const promosBusinessRef = firebase.database().ref(`/promosBusiness/${businessId}`);
       promosBusinessRef.once('value', (snapshot) => {
         if (this.state.isEditingModal) {
           const key = this.state.checkPromo;
@@ -362,7 +364,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     const promoTable = this.generatePromoList();
     const promoPagination = this.generatePagination();
     const { promoDataIsLoading, checkPromo, showAddModal, modalTitle, imageUrl, promoName, promoDescription,
-    initialDate, expireDate, promoIsLoading, imageIsLoading, openConfirmDeleteModal, 
+    initialDate, expireDate, promoIsLoading, imageIsLoading, openConfirmDeleteModal,
     businessId, promoSearch } = this.state;
     const { businessIsLoading, businessObject } = this.state;
     const { tableColumn, tableColumnDirection } = this.state;
@@ -393,6 +395,20 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           </Table.Header>
           <Table.Header>
             <Table.Row>
+              <Table.HeaderCell />
+              <Table.HeaderCell colSpan="8">
+                <Button floated="right" icon size="small" color="red" disabled={!checkPromo} onClick={this.openConfirmDeleteModal}>
+                  <Icon name="delete" /> Borrar Promoción
+              </Button>
+                <Button floated="right" icon size="small" color="yellow" disabled={!checkPromo} onClick={this.openEditModal}>
+                  <Icon name="edit" /> Editar Promoción
+              </Button>
+                <Button floated="right" icon size="small" color="green" onClick={this.openAddModal}>
+                  <Icon name="add" /> Agregar Promoción
+              </Button>
+              </Table.HeaderCell>
+            </Table.Row>
+            <Table.Row>
               <Table.HeaderCell></Table.HeaderCell>
               <Table.HeaderCell>Imagen</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'promoName' ? tableColumnDirection : null} onClick={this.handleSort('promoName')}>Nombre de Promoción</Table.HeaderCell>
@@ -407,20 +423,6 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             { promoTable }
           </Table.Body>
           <Table.Footer>
-            <Table.Row>
-              <Table.HeaderCell />
-              <Table.HeaderCell colSpan="8">
-                <Button floated="right" icon size="small" color="red" disabled={!checkPromo} onClick={this.openConfirmDeleteModal}>
-                  <Icon name="delete" /> Borrar Promoción
-              </Button>
-                <Button floated="right" icon size="small" color="yellow" disabled={!checkPromo} onClick={this.openEditModal}>
-                  <Icon name="edit" /> Editar Promoción
-              </Button>
-                <Button floated="right" icon size="small" color="green" onClick={this.openAddModal}>
-                  <Icon name="add" /> Agregar Promoción
-              </Button>
-              </Table.HeaderCell>
-            </Table.Row>
             <Table.Row>
               <Table.HeaderCell colSpan="8">
                 <Menu floated="right" pagination pointing secondary>
@@ -498,6 +500,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                 </Form.Field>
                 <Button primary floated="right" loading={promoIsLoading} >Guardar</Button>
                 <Button floated="right" color="red" onClick={this.closeAddModal}>Cancelar</Button>
+                <Button floated="right" color="grey" onClick={this.cleanAddModal}>Limpiar</Button>
               </Form>
             </Modal.Description>
           </Modal.Content>

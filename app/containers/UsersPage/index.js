@@ -13,9 +13,9 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
     userObject: [],
     userObjectForDisplay: [],
     userSearch: '',
-    defaultImage : 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
+    defaultImage: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
     paginationSize: 1,
-    activePaginationButton: 20,
+    activePaginationButton: 15,
     firstPaginationGridNumber: 1,
     tableColumn: null,
     tableColumnDirection: null,
@@ -23,7 +23,7 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
 
   componentWillMount() {
     const user = JSON.parse(localStorage.getItem('user'));
-    if (!user) { 
+    if (!user) {
       window.location = '/';
     } else {
       this.loadUsers();
@@ -33,15 +33,13 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
   onPaginationArrowClick = (direction) => {
     if (direction === 'right') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber + 5;
-      const position = firstPaginationGridNumber * this.state.paginationSize;
-      if (this.state.userObject[position - 1]) {
+      if (this.state.userObject[firstPaginationGridNumber * this.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }
     } else if (direction === 'left') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber - 5;
-      const position = firstPaginationGridNumber * this.state.paginationSize;
-      if (this.state.userObject[position - 1]) {
+      if (this.state.userObject[firstPaginationGridNumber * this.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }

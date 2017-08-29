@@ -1,7 +1,6 @@
 
-import React, { PropTypes } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
-import { createStructuredSelector } from 'reselect';
 import { Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Dropdown } from 'semantic-ui-react';
 import firebase from 'firebase';
 
@@ -20,7 +19,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     openConfirmDeleteModal: false,
     businessSearch: '',
     photoUrl: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
-    paginationSize: 20,
+    paginationSize: 15,
     activePaginationButton: 1,
     firstPaginationGridNumber: 1,
     tableColumn: null,
@@ -42,15 +41,13 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   onPaginationArrowClick = (direction) => {
     if (direction === 'right') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber + 5;
-      const position = firstPaginationGridNumber * this.state.paginationSize;
-      if (this.state.businessObject[position - 1]) {
+      if (this.state.businessObject[firstPaginationGridNumber * this.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }
     } else if (direction === 'left') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber - 5;
-      const position = firstPaginationGridNumber * this.state.paginationSize;
-      if (this.state.businessObject[position - 1]) {
+      if (this.state.businessObject[firstPaginationGridNumber * this.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }
@@ -414,20 +411,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           </Table.Header>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell></Table.HeaderCell>
-              <Table.HeaderCell>Imagen</Table.HeaderCell>
-              <Table.HeaderCell sorted={tableColumn === 'name' ? tableColumnDirection : null} onClick={this.handleSort('name')}>Nombre</Table.HeaderCell>
-              <Table.HeaderCell sorted={tableColumn === 'address' ? tableColumnDirection : null} onClick={this.handleSort('address')}>Dirección</Table.HeaderCell>
-              <Table.HeaderCell sorted={tableColumn === 'phoneNumber' ? tableColumnDirection : null} onClick={this.handleSort('phoneNumber')}>Teléfono</Table.HeaderCell>
-              <Table.HeaderCell sorted={tableColumn === 'location' ? tableColumnDirection : null} onClick={this.handleSort('location')}>Ciudad</Table.HeaderCell>
-              <Table.HeaderCell width={4}>Categorias</Table.HeaderCell>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            { businessTable }
-          </Table.Body>
-          <Table.Footer>
-            <Table.Row>
               <Table.HeaderCell />
               <Table.HeaderCell colSpan="7">
                 <Button floated="right" icon size="small" color="red" disabled={!checkBusiness} onClick={this.OpenConfirmDeleteModal}>
@@ -441,6 +424,20 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
               </Button>
               </Table.HeaderCell>
             </Table.Row>
+            <Table.Row>
+              <Table.HeaderCell></Table.HeaderCell>
+              <Table.HeaderCell>Imagen</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'name' ? tableColumnDirection : null} onClick={this.handleSort('name')}>Nombre</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'address' ? tableColumnDirection : null} onClick={this.handleSort('address')}>Dirección</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'phoneNumber' ? tableColumnDirection : null} onClick={this.handleSort('phoneNumber')}>Teléfono</Table.HeaderCell>
+              <Table.HeaderCell sorted={tableColumn === 'location' ? tableColumnDirection : null} onClick={this.handleSort('location')}>Ciudad</Table.HeaderCell>
+              <Table.HeaderCell width={4}>Categorias</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>
+            { businessTable }
+          </Table.Body>
+          <Table.Footer>
             <Table.Row>
               <Table.HeaderCell colSpan="7">
                 <Menu floated="right" pagination pointing secondary>
