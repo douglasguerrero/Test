@@ -307,11 +307,9 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           updates[`businessCategories/${categ.key}/categoryName`] = categ.name;
           updates[`businessCategories/${categ.key}/businesses/${newKey}`] = { name, address, phoneNumber, location, photoUrl };
         });
-
-        console.log('updates', updates);
-
         firebase.database().ref().update(updates).then(() => {
           this.setState({ businessIsLoading: false });
+          this.loadBusiness();
           this.closeAddModal();
         }).catch((err) => {
           this.setState({ businessIsLoading: false });
