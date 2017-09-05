@@ -322,6 +322,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           firebase.database().ref(`promos/${newKey}`).set(postDataPromo).then(() => {
             firebase.database().ref(`promosBusiness/${businessId}/promos/${newKey}`).set(postDataPromo).then(() => {
               this.setState({ promoIsLoading: false });
+              this.loadPromos();
               this.closeAddModal();
             });
           });
