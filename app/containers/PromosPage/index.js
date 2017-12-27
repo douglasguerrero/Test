@@ -4,7 +4,6 @@ import _ from 'lodash';
 import { Dropdown, Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Grid, Label } from 'semantic-ui-react';
 import { SingleDatePicker } from 'react-dates';
 import moment from 'moment';
-import 'moment/src/locale/es';
 import 'react-dates/lib/css/_datepicker.css';
 import firebase from 'firebase';
 
@@ -42,8 +41,6 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
       this.loadBusiness();
     }
   }
-
-  defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
 
   onPaginationArrowClick = (direction) => {
     if (direction === 'right') {
@@ -159,9 +156,9 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   }
 
   statusLabel = (initDate, expireDate) => {
-    const initialDate = moment(initDate).format('MM/DD/YYYY');
-    const expirationDate = moment(expireDate).format('MM/DD/YYYY');
-    const today = moment().format('MM/DD/YYYY');
+    const initialDate = new Date(initDate);
+    const expirationDate = new Date(expireDate);
+    const today = new Date();
     if (today >= initialDate && today <= expirationDate) {
       return <Label color="green" key="green">Activo</Label>;
     } else if (today > expirationDate) {

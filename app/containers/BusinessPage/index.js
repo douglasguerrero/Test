@@ -3,6 +3,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Dropdown } from 'semantic-ui-react';
 import firebase from 'firebase';
+import _ from 'lodash';
 
 export class BusinessPage extends React.PureComponent { // eslint-disable-line react/prefer-stateless-function
   state = {
@@ -35,8 +36,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
       this.loadCategories();
     }
   }
-
-  defaultImage = 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png';
 
   onPaginationArrowClick = (direction) => {
     if (direction === 'right') {
@@ -167,7 +166,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   generateBusinessList = () => {
     if (this.state.businessObjectForDisplay.length > 0) {
       return this.state.businessObjectForDisplay.map((business) =>
-        <Table.Row key={business.key}>
+        <Table.Row>
           <Table.Cell>
             <Checkbox
               name="checkBusiness"
@@ -209,7 +208,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
       this.setState({ phoneNumber: this.businessObject.phoneNumber });
       this.setState({ location: this.businessObject.location });
       this.setState({ photoUrl: this.businessObject.photoUrl });
-      this.setState({ categories: this.businessObject.categories });
+      this.setState({ categories: Object.keys(this.businessObject.categories) });
       this.setState({ isEditingModal: true });
       this.setState({ modalTitle: 'Modificar Tienda' });
       this.setState({ showAddModal: true });
@@ -234,9 +233,8 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
 
     const uploadTask = storageRef.child(`${file.name}`).put(file);
 
-    uploadTask.on('state_changed', (snapshot) => {
-    }, (error) => {
-      console.log(error);
+    uploadTask.on('state_changed', () => {
+    }, () => {
       this.setState({ imageIsLoading: false });
     }, () => {
       const downloadURL = uploadTask.snapshot.downloadURL;
@@ -251,33 +249,30 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     const { name, address, phoneNumber, location, photoUrl, categories } = this.state;
     const selectedCategories = [];
 
-    categories.forEach((category) => {
-      this.state.categoriesObject.forEach((categoryObject) => {
-        if (categoryObject.key === category) {
-          selectedCategories.push({ key: categoryObject.key, name: categoryObject.text });
-        }
-      });
-    });
-
     if (this.validateBusinessModal(name, address, phoneNumber, location, photoUrl, categories)) {
       if (this.state.isEditingModal) {
         const key = this.state.checkBusiness;
-        const promosBusinessRef = firebase.database().ref('/promosBusiness/' + key);
+        const promosBusinessRef = firebase.database().ref(`/promosBusiness/${key}`);
         promosBusinessRef.once('value', (snapshot) => {
           const promos = snapshot.val().promos ? snapshot.val().promos : [];
+          const mappedCategories = {};
+          categories.forEach((category) => {
+            mappedCategories[category] = true;
+          });
+          const copy = Object.assign({}, mappedCategories);
           const postDataBusiness = {
             name,
             address,
             phoneNumber,
             location,
             photoUrl,
-            categories,
+            categories: copy,
             isActive: true,
           };
           const postDataPromosBusiness = {
             businessName: name,
             isBusinessActive: true,
-            promos: promos,
+            promos,
           };
           const updates = {};
           updates[`/business/${key}`] = postDataBusiness;
@@ -325,7 +320,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     e.preventDefault();
     this.setState({ businessIsLoading: true });
     const key = this.state.checkBusiness;
-    const promosBusinessRef = firebase.database().ref(`/promosBusiness/${  key}`);
+    const promosBusinessRef = firebase.database().ref(`/promosBusiness/${key}`);
     promosBusinessRef.once('value', (snapshot) => {
       const promos = snapshot.val().promos ? snapshot.val().promos : [];
       this.state.businessObject.forEach((business) => {
