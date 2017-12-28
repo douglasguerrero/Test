@@ -1,10 +1,11 @@
+import 'react-dates/initialize';
 import React from 'react';
 import { connect } from 'react-redux';
 import _ from 'lodash';
 import { Dropdown, Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segment, Header, Loader, Dimmer, Input, Grid, Label } from 'semantic-ui-react';
+import 'react-dates/lib/css/_datepicker.css';
 import { SingleDatePicker } from 'react-dates';
 import moment from 'moment';
-import 'react-dates/lib/css/_datepicker.css';
 import firebase from 'firebase';
 
 export class PromosPage extends React.PureComponent { // eslint-disable-line react/prefer-stateless-function
@@ -470,7 +471,6 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                     displayFormat={this.state.dateFormat}
                     placeholder="Fecha Inicial"
                     numberOfMonths={1}
-                    showClearDate
                   />
                 </Form.Field>
                 <Form.Field required>
@@ -483,7 +483,6 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
                     displayFormat={this.state.dateFormat}
                     placeholder="Fecha Expiración"
                     numberOfMonths={1}
-                    showClearDate
                   />
                 </Form.Field>
                 <Form.Field required>
