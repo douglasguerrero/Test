@@ -6,6 +6,7 @@ import { Dropdown, Icon, Menu, Table, Button, Checkbox, Image, Modal, Form, Segm
 import 'react-dates/lib/css/_datepicker.css';
 import { SingleDatePicker } from 'react-dates';
 import moment from 'moment';
+import 'moment/src/locale/es';
 import firebase from 'firebase';
 
 export class PromosPage extends React.PureComponent { // eslint-disable-line react/prefer-stateless-function
@@ -182,6 +183,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             />
           </Table.Cell>
           <Table.Cell><Image src={promo.imageUrl} size="small" /></Table.Cell>
+          <Table.Cell><b>{promo.key}</b></Table.Cell>
           <Table.Cell>{promo.name}</Table.Cell>
           <Table.Cell>{promo.description}</Table.Cell>
           <Table.Cell>{promo.business.name}</Table.Cell>
@@ -375,13 +377,13 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
         <Table sortable celled color="blue">
           <Table.Header >
             <Table.Row>
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="9">
                 <Segment inverted color="blue"><Header as="h1">Promociones</Header></Segment></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Header >
             <Table.Row>
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="9">
                 <Input
                   action fluid name="promoSearch" value={promoSearch} type="text" placeholder="Buscar Promoción..."
                   onChange={this.handleChange}
@@ -395,7 +397,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell />
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="9">
                 <Button floated="right" icon size="small" color="red" disabled={!checkPromo} onClick={this.openConfirmDeleteModal}>
                   <Icon name="delete" /> Borrar Promoción
               </Button>
@@ -410,6 +412,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             <Table.Row>
               <Table.HeaderCell></Table.HeaderCell>
               <Table.HeaderCell>Imagen</Table.HeaderCell>
+              <Table.HeaderCell>Identificador</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'promoName' ? tableColumnDirection : null} onClick={this.handleSort('promoName')}>Nombre de Promoción</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'promoDescription' ? tableColumnDirection : null} onClick={this.handleSort('promoDescription')}>Descripción</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'business.name' ? tableColumnDirection : null} onClick={this.handleSort('business.name')}>Tienda</Table.HeaderCell>
@@ -423,7 +426,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           </Table.Body>
           <Table.Footer>
             <Table.Row>
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="9">
                 <Menu floated="right" pagination pointing secondary>
                   { promoPagination }
                 </Menu>

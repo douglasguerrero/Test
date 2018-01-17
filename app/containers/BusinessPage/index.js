@@ -176,6 +176,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
             />
           </Table.Cell>
           <Table.Cell><Image src={business.photoUrl} size="small" /></Table.Cell>
+          <Table.Cell><b>{business.key}</b></Table.Cell>
           <Table.Cell>{business.name}</Table.Cell>
           <Table.Cell>{business.address}</Table.Cell>
           <Table.Cell>{business.phoneNumber}</Table.Cell>
@@ -208,10 +209,12 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
       this.setState({ phoneNumber: this.businessObject.phoneNumber });
       this.setState({ location: this.businessObject.location });
       this.setState({ photoUrl: this.businessObject.photoUrl });
-      this.setState({ categories: Object.keys(this.businessObject.categories) });
       this.setState({ isEditingModal: true });
       this.setState({ modalTitle: 'Modificar Tienda' });
       this.setState({ showAddModal: true });
+      if (this.businessObject.categories) {
+        this.setState({ categories: Object.keys(this.businessObject.categories) });
+      }
     }
   }
 
@@ -385,13 +388,13 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
         <Table sortable celled color="blue">
           <Table.Header >
             <Table.Row>
-              <Table.HeaderCell colSpan="7">
+              <Table.HeaderCell colSpan="8">
                 <Segment inverted color="blue"><Header as="h1">Tiendas</Header></Segment></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Header >
             <Table.Row>
-              <Table.HeaderCell colSpan="7">
+              <Table.HeaderCell colSpan="8">
                 <Input
                   action fluid name="businessSearch" value={businessSearch} type="text" placeholder="Buscar Tienda..."
                   onChange={this.handleChange}
@@ -405,7 +408,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell />
-              <Table.HeaderCell colSpan="7">
+              <Table.HeaderCell colSpan="8">
                 <Button floated="right" icon size="small" color="red" disabled={!checkBusiness} onClick={this.OpenConfirmDeleteModal}>
                   <Icon name="delete" /> Borrar Tienda
               </Button>
@@ -420,6 +423,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
             <Table.Row>
               <Table.HeaderCell></Table.HeaderCell>
               <Table.HeaderCell>Imagen</Table.HeaderCell>
+              <Table.HeaderCell>Identificador</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'name' ? tableColumnDirection : null} onClick={this.handleSort('name')}>Nombre</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'address' ? tableColumnDirection : null} onClick={this.handleSort('address')}>Dirección</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'phoneNumber' ? tableColumnDirection : null} onClick={this.handleSort('phoneNumber')}>Teléfono</Table.HeaderCell>
@@ -432,7 +436,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           </Table.Body>
           <Table.Footer>
             <Table.Row>
-              <Table.HeaderCell colSpan="7">
+              <Table.HeaderCell colSpan="8">
                 <Menu floated="right" pagination pointing secondary>
                   { businessPagination }
                 </Menu>
