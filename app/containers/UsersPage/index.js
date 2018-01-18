@@ -14,7 +14,7 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
     userObjectForDisplay: [],
     userSearch: '',
     defaultImage: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
-    paginationSize: 1,
+    paginationSize: 20,
     activePaginationButton: 15,
     firstPaginationGridNumber: 1,
     tableColumn: null,
