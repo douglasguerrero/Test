@@ -19,6 +19,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     isEditingModal: false,
     openConfirmDeleteModal: false,
     businessSearch: '',
+    businessKey: '',
     photoUrl: 'https://react.semantic-ui.com/assets/images/wireframe/square-image.png',
     paginationSize: 15,
     activePaginationButton: 1,
@@ -176,7 +177,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
             />
           </Table.Cell>
           <Table.Cell><Image src={business.photoUrl} size="small" /></Table.Cell>
-          <Table.Cell><b>{business.key}</b></Table.Cell>
           <Table.Cell>{business.name}</Table.Cell>
           <Table.Cell>{business.address}</Table.Cell>
           <Table.Cell>{business.phoneNumber}</Table.Cell>
@@ -204,6 +204,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
     });
 
     if (this.businessObject) {
+      this.setState({ businessKey: this.businessObject.key });
       this.setState({ name: this.businessObject.name });
       this.setState({ address: this.businessObject.address });
       this.setState({ phoneNumber: this.businessObject.phoneNumber });
@@ -219,6 +220,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   }
 
   closeAddModal = () => {
+    this.setState({ businessKey: '' });
     this.setState({ name: '' });
     this.setState({ address: '' });
     this.setState({ phoneNumber: '' });
@@ -377,7 +379,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   render() {
     const businessTable = this.generateBusinessList();
     const businessPagination = this.generatePagination();
-    const { photoUrl, imageIsLoading, showAddModal, businessIsLoading, name, openConfirmDeleteModal, categories,
+    const { businessKey, photoUrl, imageIsLoading, showAddModal, businessIsLoading, name, openConfirmDeleteModal, categories,
       address, phoneNumber, location, checkBusiness, modalTitle, businessDataIsLoading, businessSearch } = this.state;
     const { tableColumn, tableColumnDirection } = this.state;
     return (
@@ -388,13 +390,13 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
         <Table sortable celled color="blue">
           <Table.Header >
             <Table.Row>
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="7">
                 <Segment inverted color="blue"><Header as="h1">Tiendas</Header></Segment></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Header >
             <Table.Row>
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="7">
                 <Input
                   action fluid name="businessSearch" value={businessSearch} type="text" placeholder="Buscar Tienda..."
                   onChange={this.handleChange}
@@ -408,7 +410,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell />
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="7">
                 <Button floated="right" icon size="small" color="red" disabled={!checkBusiness} onClick={this.OpenConfirmDeleteModal}>
                   <Icon name="delete" /> Borrar Tienda
               </Button>
@@ -423,7 +425,6 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
             <Table.Row>
               <Table.HeaderCell></Table.HeaderCell>
               <Table.HeaderCell>Imagen</Table.HeaderCell>
-              <Table.HeaderCell>Identificador</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'name' ? tableColumnDirection : null} onClick={this.handleSort('name')}>Nombre</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'address' ? tableColumnDirection : null} onClick={this.handleSort('address')}>Dirección</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'phoneNumber' ? tableColumnDirection : null} onClick={this.handleSort('phoneNumber')}>Teléfono</Table.HeaderCell>
@@ -436,7 +437,7 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           </Table.Body>
           <Table.Footer>
             <Table.Row>
-              <Table.HeaderCell colSpan="8">
+              <Table.HeaderCell colSpan="7">
                 <Menu floated="right" pagination pointing secondary>
                   { businessPagination }
                 </Menu>
@@ -450,6 +451,10 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
           <Modal.Content image>
             <Modal.Description>
               <Form>
+                <Form.Field>
+                  <label>Identificador</label>
+                  <label>{businessKey}</label>
+                </Form.Field>
                 <Form.Field required>
                   <label>Nombre de Tienda</label>
                   <Form.Input name="name" value={name} placeholder="Nombre de Tienda" onChange={this.handleChange} />

@@ -22,6 +22,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     checkPromo: false,
     isEditingModal: false,
     openConfirmDeleteModal: false,
+    promoKey: '',
     promoName: '',
     promoDescription: '',
     promoSearch: '',
@@ -183,7 +184,6 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             />
           </Table.Cell>
           <Table.Cell><Image src={promo.imageUrl} size="small" /></Table.Cell>
-          <Table.Cell><b>{promo.key}</b></Table.Cell>
           <Table.Cell>{promo.name}</Table.Cell>
           <Table.Cell>{promo.description}</Table.Cell>
           <Table.Cell>{promo.business.name}</Table.Cell>
@@ -207,11 +207,13 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   }
 
   closeAddModal = () => {
+    this.setState({ promoKey: '' });
     this.setState({ imageUrl: this.defaultImage });
     this.setState({ showAddModal: false });
   }
 
   cleanAddModal = () => {
+    this.setState({ promoKey: '' });
     this.setState({ promoName: '' });
     this.setState({ promoDescription: '' });
     this.setState({ businessId: null });
@@ -228,6 +230,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
     });
 
     if (this.promoObject) {
+      this.setState({ promoKey: this.promoObject.key });
       this.setState({ promoName: this.promoObject.name });
       this.setState({ promoDescription: this.promoObject.description });
       this.setState({ initialDate: moment(this.promoObject.initialDate) });
@@ -364,7 +367,7 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
   render() {
     const promoTable = this.generatePromoList();
     const promoPagination = this.generatePagination();
-    const { promoDataIsLoading, checkPromo, showAddModal, modalTitle, imageUrl, promoName, promoDescription,
+    const { promoKey,promoDataIsLoading, checkPromo, showAddModal, modalTitle, imageUrl, promoName, promoDescription,
     initialDate, expireDate, promoIsLoading, imageIsLoading, openConfirmDeleteModal,
     businessId, promoSearch } = this.state;
     const { businessIsLoading, businessObject } = this.state;
@@ -412,7 +415,6 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
             <Table.Row>
               <Table.HeaderCell></Table.HeaderCell>
               <Table.HeaderCell>Imagen</Table.HeaderCell>
-              <Table.HeaderCell>Identificador</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'promoName' ? tableColumnDirection : null} onClick={this.handleSort('promoName')}>Nombre de Promoción</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'promoDescription' ? tableColumnDirection : null} onClick={this.handleSort('promoDescription')}>Descripción</Table.HeaderCell>
               <Table.HeaderCell sorted={tableColumn === 'business.name' ? tableColumnDirection : null} onClick={this.handleSort('business.name')}>Tienda</Table.HeaderCell>
@@ -440,6 +442,10 @@ export class PromosPage extends React.PureComponent { // eslint-disable-line rea
           <Modal.Content image>
             <Modal.Description>
               <Form onSubmit={this.writePromoData}>
+                <Form.Field>
+                  <label>Identificador</label>
+                  <label>{promoKey}</label>
+                </Form.Field>
                 <Form.Field required>
                   <label>Nombre de Promoción</label>
                   <Form.Input name="promoName" value={promoName} placeholder="Nombre de Promoción" onChange={this.handleChange} />
