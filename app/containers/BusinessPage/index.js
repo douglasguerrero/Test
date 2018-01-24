@@ -41,13 +41,13 @@ export class BusinessPage extends React.PureComponent { // eslint-disable-line r
   onPaginationArrowClick = (direction) => {
     if (direction === 'right') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber + 5;
-      if (this.state.businessObject[firstPaginationGridNumber * this.paginationSize]) {
+      if (this.state.businessObject[firstPaginationGridNumber * this.state.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }
     } else if (direction === 'left') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber - 5;
-      if (this.state.businessObject[firstPaginationGridNumber * this.paginationSize]) {
+      if (this.state.businessObject[firstPaginationGridNumber * this.state.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }

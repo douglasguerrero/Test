@@ -33,13 +33,13 @@ export class UsersPage extends React.PureComponent { // eslint-disable-line reac
   onPaginationArrowClick = (direction) => {
     if (direction === 'right') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber + 5;
-      if (this.state.userObject[firstPaginationGridNumber * this.paginationSize]) {
+      if (this.state.userObject[firstPaginationGridNumber * this.state.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }
     } else if (direction === 'left') {
       const firstPaginationGridNumber = this.state.firstPaginationGridNumber - 5;
-      if (this.state.userObject[firstPaginationGridNumber * this.paginationSize]) {
+      if (this.state.userObject[firstPaginationGridNumber * this.state.paginationSize]) {
         this.setState({ firstPaginationGridNumber });
         this.onPaginationItemClick(firstPaginationGridNumber - 1);
       }
